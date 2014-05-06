@@ -4,5 +4,11 @@
     <string name="app_name">ShareSight</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_camera">Capture</string>
+    <string name="action_exit">Exit</string>
+    <string name="title_activity_upload">UploadActivity</string>
+    <string name="action_upload">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="img_upload_desc">Confirm Upload this Image</string>
 
 </resources>
