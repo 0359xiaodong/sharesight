@@ -17,6 +17,7 @@ import org.apache.http.util.EntityUtils;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -96,7 +97,7 @@ public class MainActivity extends ActionBarActivity {
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
-		} else if (id == R.id.action_camera) {
+		} else if (id == R.id.action_camera_capture) {
 			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 			if (cameraIntent.resolveActivity(getPackageManager()) != null) {
 				// store this image to external storage
@@ -117,6 +118,10 @@ public class MainActivity extends ActionBarActivity {
 				startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
 			}
 			return true;
+		} else if (id == R.id.action_camera_select) {
+			Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+			photoPickerIntent.setType("image/*");
+			startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -126,7 +131,6 @@ public class MainActivity extends ActionBarActivity {
 		today.setToNow();
 		String timeStamp = today.format2445();
 		String imageFileName = mMobileId + "-" + timeStamp;
-		Toast.makeText(this, IMAGE_CACHE_PATH, Toast.LENGTH_LONG).show();
 		File imgCacheDir = new File(IMAGE_CACHE_PATH);
 		// If the folder does not exist, then create it..
 		if (!imgCacheDir.exists()) {
@@ -146,7 +150,37 @@ public class MainActivity extends ActionBarActivity {
 			Intent uploadActivity = new Intent(this, UploadActivity.class);
 			uploadActivity.putExtra("photo", mPhotoPath);
 			startActivity(uploadActivity);
+		} else if (requestCode == REQUEST_IMAGE_SELECT
+				&& resultCode == RESULT_OK) {
+			Uri selected = data.getData();
+			Intent uploadActivity = new Intent(this, UploadActivity.class);
+			uploadActivity.putExtra("photo", getRealPathFromUri(selected));
+			startActivity(uploadActivity);
 		}
+	}
+
+	/**
+	 * This code snippet is copied from
+	 * <a>http://stackoverflow.com/questions/2789276
+	 * /android-get-real-path-by-uri-getpath/9989900</a>
+	 * 
+	 * @param contentURI
+	 * @return
+	 */
+	private String getRealPathFromUri(Uri contentURI) {
+		String result;
+		Cursor cursor = getContentResolver().query(contentURI, null, null,
+				null, null);
+		if (cursor == null) {
+			result = contentURI.getPath();
+		} else {
+			cursor.moveToFirst();
+			int idx = cursor
+					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+			result = cursor.getString(idx);
+			cursor.close();
+		}
+		return result;
 	}
 
 	/**
@@ -348,6 +382,8 @@ public class MainActivity extends ActionBarActivity {
 	private static final int IMAGE_LOADED = 22141;
 
 	private static final int REQUEST_IMAGE_CAPTURE = 14221;
+
+	private static final int REQUEST_IMAGE_SELECT = 12241;
 
 	// private static final int REQUEST_IMAGE_UPLOAD = 12241;
 

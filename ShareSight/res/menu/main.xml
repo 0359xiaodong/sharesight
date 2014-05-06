@@ -2,21 +2,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="seaice.app.sharesight.MainActivity" >
-    
-    <item 
-        android:id="@+id/action_camera"
-        android:title="@string/action_camera"
-        android:icon="@drawable/ic_action_camera"
-        app:showAsAction="always" />
 
+    <item
+        android:id="@+id/action_camera"
+        android:icon="@drawable/ic_action_camera"
+        android:title="@string/action_camera"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/action_camera_select"
+                android:title="@string/action_camera_select"/>
+            <item
+                android:id="@+id/action_camera_capture"
+                android:title="@string/action_camera_capture"/>
+        </menu>
+    </item>
     <item
         android:id="@+id/action_settings"
         android:title="@string/action_settings"
         app:showAsAction="never"/>
-    
     <item
         android:id="@+id/action_exit"
         android:title="@string/action_exit"
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
 
 </menu>

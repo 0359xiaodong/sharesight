@@ -78,6 +78,7 @@ public class UploadActivity extends Activity {
 		setContentView(R.layout.activity_upload);
 
 		mPhotoPath = getIntent().getStringExtra("photo");
+		Toast.makeText(this, mPhotoPath, Toast.LENGTH_LONG).show();
 		mImgView = (ImageView) findViewById(R.id.confirmImage);
 	}
 
