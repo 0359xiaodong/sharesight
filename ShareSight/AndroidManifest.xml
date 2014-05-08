@@ -30,6 +30,10 @@
             android:name="seaice.app.sharesight.UploadActivity"
             android:label="@string/title_activity_upload" >
         </activity>
+        <activity
+            android:name="seaice.app.sharesight.ViewActivity"
+            android:label="@string/title_activity_view" >
+        </activity>
     </application>
 
 </manifest>
