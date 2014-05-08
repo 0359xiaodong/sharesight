@@ -2,38 +2,30 @@ package seaice.app.sharesight;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import java.util.Queue;
 
 import seaice.app.sharesight.data.ColumnMeta;
 import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.data.ImageTask;
-import seaice.app.sharesight.loader.FileCache;
+import seaice.app.sharesight.loader.ImageLoader;
+import seaice.app.sharesight.loader.ImageLoaderCallback;
 import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.views.MyScrollView;
 import seaice.app.sharesight.views.MyScrollView.ScrollViewListener;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
-import android.telephony.TelephonyManager;
 import android.text.format.Time;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -43,11 +35,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 
 /**
  * The entry of this application, this activity will take the responsibility to
@@ -59,7 +46,8 @@ import com.google.gson.JsonParser;
  * @author zhb
  * 
  */
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements
+		ImageLoaderCallback {
 
 	/**
 	 * The container to hold all the ImageViews
@@ -74,19 +62,27 @@ public class MainActivity extends ActionBarActivity {
 	 */
 	private MyScrollView mScrollView;
 
-	private FileCache mFileCache;
+	/** Layout Variable */
+	private ArrayList<ColumnMeta> mColumnMetaList = new ArrayList<ColumnMeta>();
+	private int mMarginH = 8;
+	private int mMarginV = 8;
+	private int mColumnWidth = 0;
+	private int mColumnCnt = 0;
 
-	/** Activity status variable */
+	/** Image Loader Variable */
+	private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
+	private String mImagePath;
+	private int mImageCount = 0;
+	private static final int IMAGE_COUNT_PER_PAGE = 10;
+
+	private ImageLoader mLoader;
+
+	private boolean mLoading = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
-		// we need the imei number to identify this mobile
-		TelephonyManager tm = (TelephonyManager) this
-				.getSystemService(TELEPHONY_SERVICE);
-		tm.getDeviceId();
 
 		mLayout = (RelativeLayout) findViewById(R.id.layout);
 		mScrollView = (MyScrollView) findViewById(R.id.container);
@@ -101,43 +97,30 @@ public class MainActivity extends ActionBarActivity {
 				int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
 						.getScrollY()));
 
-				if (diff == 0) {
-					// load the next page photo list
-					loadImageMetaListAsync(mImageCount);
+				if (diff == 0 && !mLoading) {
+					mLoading = true;
+
+					if ((mImageCount % IMAGE_COUNT_PER_PAGE == 0)) {
+						mLoader.loadImageMetaList(mImageCount);
+					}
 				}
 			}
 
 		});
 
-		mFileCache = new FileCache();
-	}
-
-	public void onStart() {
-		super.onStart();
-		if (mCurrentIndex > 0) {
-			restoreFromTaskList();
-			return;
-		}
-		// READD IMAGE VIEW LIST
-		// If it the second time to display the ImageMetaList
 		mProgressDialog = new ProgressDialog(this,
 				ProgressDialog.STYLE_HORIZONTAL);
 		mProgressDialog.setMessage("Loading...");
-		// PREPARE LAYOUT
 		prepareLayoutArguments();
-		// LOAD IMAGE META LIST
-		mImageCount = 0;
-		loadImageMetaListAsync(mImageCount);
+
+		mLoader = new ImageLoader(this);
+		mLoader.loadImageMetaList(mImageCount);
 	}
 
 	public void onStop() {
 		super.onStop();
-		// HERE WE NEED TO FREE MEMORY
-		// REMOVE ALL THE IMAGE VIEWS
-		for (int i = 0; i < mLayout.getChildCount(); ++i) {
-			ImageView imgView = (ImageView) mLayout.getChildAt(i);
-			imgView.setImageBitmap(null);
-		}
+
+		mProgressDialog.dismiss();
 	}
 
 	/**
@@ -147,15 +130,10 @@ public class MainActivity extends ActionBarActivity {
 	 * @param imageMetaList
 	 */
 	private void appendImageViewList(List<ImageMeta> imageMetaList) {
-		mProgressDialog.dismiss();
-		mImageCount += imageMetaList.size();
 		for (ImageMeta imageMeta : imageMetaList) {
 			int retId = appendImageView(imageMeta);
-			// QUEUE THIS TASK
-			mTaskList.add(new ImageTask(retId, imageMeta));
+			mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
 		}
-		// LOAD IMAGE => HANDLE THE QUEUE TASK
-		loadImageAsync();
 	}
 
 	/**
@@ -173,7 +151,7 @@ public class MainActivity extends ActionBarActivity {
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
 				realWidth, realHeight);
 		// sort the mColumnRecords
-		Collections.sort(mColumnRecords, new Comparator<ColumnMeta>() {
+		Collections.sort(mColumnMetaList, new Comparator<ColumnMeta>() {
 			@Override
 			public int compare(ColumnMeta lhs, ColumnMeta rhs) {
 				if (lhs.getHeight() < rhs.getHeight()) {
@@ -183,7 +161,7 @@ public class MainActivity extends ActionBarActivity {
 				}
 			}
 		});
-		ColumnMeta above = mColumnRecords.get(0);
+		ColumnMeta above = mColumnMetaList.get(0);
 		above.addHeight(realHeight);
 		// find its upper view
 		if (above.getTopId() == ColumnMeta.PARENT_TOP) {
@@ -209,7 +187,7 @@ public class MainActivity extends ActionBarActivity {
 		}
 
 		// set the leftId of the right column of current
-		for (ColumnMeta record : mColumnRecords) {
+		for (ColumnMeta record : mColumnMetaList) {
 			if (record.getColumn() == (above.getColumn() + 1)) {
 				record.setLeftId(id);
 				break;
@@ -237,215 +215,32 @@ public class MainActivity extends ActionBarActivity {
 		mColumnCnt = height > width ? 2 : 3;
 		mColumnWidth = (width - (mColumnCnt + 1) * mMarginH) / mColumnCnt;
 		for (int i = 1; i <= mColumnCnt; ++i) {
-			ColumnMeta record = new ColumnMeta();
-			record.setHeight(0);
-			record.setColumn(i);
-			record.setLeftId(i == 1 ? ColumnMeta.PARENT_LEFT
+			ColumnMeta columnMeta = new ColumnMeta();
+			columnMeta.setHeight(0);
+			columnMeta.setColumn(i);
+			columnMeta.setLeftId(i == 1 ? ColumnMeta.PARENT_LEFT
 					: ColumnMeta.INVALID_LEFT);
 			// the first row is all below parent top
-			record.setTopId(ColumnMeta.PARENT_TOP);
-			mColumnRecords.add(record);
+			columnMeta.setTopId(ColumnMeta.PARENT_TOP);
+			mColumnMetaList.add(columnMeta);
 		}
-	}
-
-	private void loadImageMetaListAsync(final int begin) {
-		mProgressDialog.show();
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				loadImageMetaList(begin);
-			}
-		}).start();
-	}
-
-	private void restoreFromTaskList() {
-		mCurrentIndex = 0;
-		loadImageAsync();
-	}
-
-	/**
-	 * Real networking here.. User gson library to convert a json string to an
-	 * object.
-	 */
-	private void loadImageMetaList(int begin) {
-		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(IMAGE_META_SERVER + "/" + begin);
-		ArrayList<ImageMeta> imageMetaList = new ArrayList<ImageMeta>();
-
-		try {
-			HttpResponse response = httpClient.execute(httpGet);
-			String json = EntityUtils.toString(response.getEntity());
-			JsonParser parser = new JsonParser();
-			Gson gson = new Gson();
-			JsonArray jsonArray = parser.parse(json).getAsJsonArray();
-			for (JsonElement jsonEle : jsonArray) {
-				imageMetaList.add(gson.fromJson(jsonEle, ImageMeta.class));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		Bundle data = new Bundle();
-		data.putParcelableArrayList(IMAGE_META_TAG, imageMetaList);
-		Message msg = Message.obtain();
-		msg.what = IMAGE_META_LOADED;
-		msg.setData(data);
-		mHandler.sendMessage(msg);
 	}
 
 	private void refresh() {
-		// REMOVE ALL THE IMAGE VIEWS
 		mLayout.removeAllViews();
-		// RESET PHOTOCOUNT
 		mImageCount = 0;
-		// RESET LAYOUT DATA STRUCTURE
-		mColumnRecords.clear();
+		mColumnMetaList.clear();
 		prepareLayoutArguments();
-		// THEN RELOAD THE IMAGE META
-		loadImageMetaListAsync(mImageCount);
+
+		mLoader.loadImageMetaList(mImageCount);
 	}
-
-	/**
-	 * Load a single Image from url, the parameter is retrieved from the task
-	 * queue. Which includes the assigned id and the target image meta data.
-	 * Since it will block the UI thread, so I place the downloading code into
-	 * another function and start a new thread to run it..
-	 */
-	private void loadImageAsync() {
-		if (mCurrentIndex == mTaskList.size()) {
-			// IF ALL THE TASK ARE DONE, THEN RETURN
-			return;
-		}
-		final ImageTask task = mTaskList.get(mCurrentIndex);
-		++mCurrentIndex;
-		Bitmap bitmap = mFileCache.getBitmapFromCache(task.getImageMeta()
-				.getUrl());
-		if (bitmap != null) {
-			ImageView imgView = (ImageView) findViewById(task.getImageViewId());
-			if (imgView != null) {
-				imgView.setImageBitmap(bitmap);
-			}
-			// CONTINUE LOADING
-			loadImageAsync();
-			return;
-		}
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				loadImage(task);
-			}
-		}).start();
-
-	}
-
-	/**
-	 * Connect to the server and download the Image.
-	 * 
-	 * @param task
-	 */
-	private void loadImage(ImageTask task) {
-		String url = task.getImageMeta().getUrl();
-		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(url);
-
-		try {
-			HttpResponse response = httpClient.execute(httpGet);
-			Bitmap bitmap = BitmapFactory.decodeStream(response.getEntity()
-					.getContent());
-			Message msg = Message.obtain();
-			msg.what = IMAGE_LOADED;
-			Bundle data = new Bundle();
-			data.putInt("id", task.getImageViewId());
-			data.putString("url", task.getImageMeta().getUrl());
-			data.putParcelable("bitmap", bitmap);
-			msg.setData(data);
-			mHandler.sendMessage(msg);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (OutOfMemoryError error) {
-			// when decode the url stream, there are out of memory error
-
-		}
-	}
-
-	/**
-	 * Handle to build a bridge between networking and UI thread.
-	 */
-	private Handler mHandler = new MyHandler(this);
-
-	private static final int IMAGE_META_LOADED = 14122;
-
-	private static final int IMAGE_LOADED = 22141;
 
 	private static final int REQUEST_IMAGE_CAPTURE = 14221;
 
 	private static final int REQUEST_IMAGE_SELECT = 12241;
 
-	// private static final int REQUEST_IMAGE_UPLOAD = 12241;
-
-	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getImage";
-
 	private static final String IMAGE_CACHE_PATH = Environment
 			.getExternalStorageDirectory() + "/ShareSight/cache/capture";
-
-	private static final String IMAGE_META_TAG = "IMAGEMETA";
-
-	/**
-	 * To avoid memory leak since there is a loop reference
-	 * 
-	 * @author zhb
-	 * 
-	 */
-	private static class MyHandler extends Handler {
-
-		private WeakReference<MainActivity> mHost;
-
-		public MyHandler(MainActivity host) {
-			mHost = new WeakReference<MainActivity>(host);
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
-			if (msg.what == IMAGE_META_LOADED) {
-				ArrayList<ImageMeta> imageMetaList = msg.getData()
-						.getParcelableArrayList(IMAGE_META_TAG);
-				if (mHost != null) {
-					// ADD A LIST OF IMAGE VIEW
-					mHost.get().appendImageViewList(imageMetaList);
-				}
-			}
-			if (msg.what == IMAGE_LOADED) {
-				Bitmap bitmap = msg.getData().getParcelable("bitmap");
-				String url = msg.getData().getString("url");
-				int id = msg.getData().getInt("id");
-				if (mHost != null) {
-					mHost.get().mFileCache.addToCache(url, bitmap);
-					ImageView imgView = (ImageView) mHost.get()
-							.findViewById(id);
-					imgView.setImageBitmap(bitmap);
-					mHost.get().loadImageAsync();
-				}
-			}
-		}
-	}
-
-	/** A helper data structure to decide image layouts */
-	private ArrayList<ColumnMeta> mColumnRecords = new ArrayList<ColumnMeta>();
-
-	/** Configuration parameter */
-	private int mMarginH = 8;
-	private int mMarginV = 8;
-	private int mColumnWidth = 0;
-	private int mColumnCnt = 0;
-
-	/** Store the image loading task */
-	private List<ImageTask> mTaskList = new ArrayList<ImageTask>();
-	/** Current index which has been loaded */
-	private int mCurrentIndex;
-
-	private String mImagePath;
-
-	private int mImageCount = 0;
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -511,7 +306,7 @@ public class MainActivity extends ActionBarActivity {
 		if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 			// start the upload activity
 			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo", mImagePath);
+			uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
 			startActivity(uploadActivity);
 		} else if (requestCode == REQUEST_IMAGE_SELECT
 				&& resultCode == RESULT_OK) {
@@ -521,5 +316,49 @@ public class MainActivity extends ActionBarActivity {
 					AppUtils.getRealPathFromUri(this, selected));
 			startActivity(uploadActivity);
 		}
+	}
+
+	public static final String IMAGE_PATH_TAG = "IMAGE";
+
+	@Override
+	public void onImageMetaLoaded(List<ImageMeta> imageMetaList) {
+		appendImageViewList(imageMetaList);
+
+		mImageCount += mTaskQueue.size();
+		ImageTask task = mTaskQueue.poll();
+		mLoader.loadImage(task);
+	}
+
+	@Override
+	public void onImageLoaded(int imageViewId, Bitmap bitmap) {
+		ImageView imageView = (ImageView) findViewById(imageViewId);
+		if (imageView != null) {
+			imageView.setImageBitmap(bitmap);
+		}
+
+		// Needs continue?
+		ImageTask task = mTaskQueue.poll();
+		mLoader.loadImage(task);
+	}
+
+	@Override
+	public void beforeLoadImageMeta() {
+		mProgressDialog.show();
+	}
+
+	@Override
+	public void beforeLoadImage() {
+		// LEAVE IT AS A STUB
+	}
+
+	@Override
+	public void afterLoadImageMeta() {
+		mLoading = false;
+		mProgressDialog.dismiss();
+	}
+
+	@Override
+	public void afterLoadImage() {
+		// LEAVE IT AS A STUB
 	}
 }

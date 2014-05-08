@@ -41,7 +41,7 @@ public class UploadActivity extends Activity {
 	/** The Bitmap */
 	private Bitmap mBitmap;
 	/** Where to read the photo */
-	private String mPhotoPath;
+	private String mImagePath;
 	/** Photo Width */
 	private int mPhotoWidth = 0;
 	/** Photo Height */
@@ -102,13 +102,20 @@ public class UploadActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_upload);
 
-		mPhotoPath = getIntent().getStringExtra("photo");
+		mImagePath = getIntent().getStringExtra(MainActivity.IMAGE_PATH_TAG);
 		mImgView = (ImageView) findViewById(R.id.confirmImage);
 
 		TelephonyManager tm = (TelephonyManager) this
 				.getSystemService(TELEPHONY_SERVICE);
 		// how to identify this image
 		mDeviceId = tm.getDeviceId();
+	}
+	
+	@Override
+	public void onStop() {
+		super.onStop();
+		
+		mProgressDialog.dismiss();
 	}
 
 	@Override
@@ -147,7 +154,7 @@ public class UploadActivity extends Activity {
 
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 		builder.addBinaryBody("file",
-				AppUtils.saveBitmapToFile(mBitmap, mPhotoPath));
+				AppUtils.saveBitmapToFile(mBitmap, mImagePath));
 		builder.addTextBody("format", "redirect");
 
 		httppost.setEntity(builder.build());
@@ -215,7 +222,7 @@ public class UploadActivity extends Activity {
 	}
 
 	private void setImageViewSource() {
-		File imageFile = new File(mPhotoPath);
+		File imageFile = new File(mImagePath);
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
 			options.inJustDecodeBounds = true;
