@@ -1,4 +1,4 @@
-package seaice.app.sharesight;
+package seaice.app.sharesight.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,8 +7,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.content.ContextWrapper;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.provider.MediaStore;
 
 public class AppUtils {
 
@@ -21,7 +25,7 @@ public class AppUtils {
 	 * @return a generated ID value
 	 */
 	public static int generateViewId() {
-		for (;;) {
+		while (true) {
 			final int result = sNextGeneratedId.get();
 			int newValue = result + 1;
 			if (newValue > 0x00FFFFFF)
@@ -80,5 +84,22 @@ public class AppUtils {
 			e.printStackTrace();
 		}
 		return file;
+	}
+
+	public static String getRealPathFromUri(ContextWrapper contextWrapper,
+			Uri contentURI) {
+		String result;
+		Cursor cursor = contextWrapper.getContentResolver().query(contentURI,
+				null, null, null, null);
+		if (cursor == null) {
+			result = contentURI.getPath();
+		} else {
+			cursor.moveToFirst();
+			int idx = cursor
+					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+			result = cursor.getString(idx);
+			cursor.close();
+		}
+		return result;
 	}
 }

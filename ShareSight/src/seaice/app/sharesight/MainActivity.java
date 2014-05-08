@@ -14,12 +14,15 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
-import seaice.app.sharesight.cache.FileCache;
+import seaice.app.sharesight.data.ColumnMeta;
+import seaice.app.sharesight.data.ImageMeta;
+import seaice.app.sharesight.data.ImageTask;
+import seaice.app.sharesight.loader.FileCache;
+import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.views.MyScrollView;
 import seaice.app.sharesight.views.MyScrollView.ScrollViewListener;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -83,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
 		// we need the imei number to identify this mobile
 		TelephonyManager tm = (TelephonyManager) this
 				.getSystemService(TELEPHONY_SERVICE);
-		mDevideId = tm.getDeviceId();
+		tm.getDeviceId();
 
 		mLayout = (RelativeLayout) findViewById(R.id.layout);
 		mScrollView = (MyScrollView) findViewById(R.id.container);
@@ -100,7 +103,7 @@ public class MainActivity extends ActionBarActivity {
 
 				if (diff == 0) {
 					// load the next page photo list
-					loadImageMetaListAsync(mPhotoCount);
+					loadImageMetaListAsync(mImageCount);
 				}
 			}
 
@@ -123,8 +126,8 @@ public class MainActivity extends ActionBarActivity {
 		// PREPARE LAYOUT
 		prepareLayoutArguments();
 		// LOAD IMAGE META LIST
-		mPhotoCount = 0;
-		loadImageMetaListAsync(mPhotoCount);
+		mImageCount = 0;
+		loadImageMetaListAsync(mImageCount);
 	}
 
 	public void onStop() {
@@ -145,7 +148,7 @@ public class MainActivity extends ActionBarActivity {
 	 */
 	private void appendImageViewList(List<ImageMeta> imageMetaList) {
 		mProgressDialog.dismiss();
-		mPhotoCount += imageMetaList.size();
+		mImageCount += imageMetaList.size();
 		for (ImageMeta imageMeta : imageMetaList) {
 			int retId = appendImageView(imageMeta);
 			// QUEUE THIS TASK
@@ -165,49 +168,50 @@ public class MainActivity extends ActionBarActivity {
 		int id = AppUtils.generateViewId();
 		ImageView imageView = new ImageView(this);
 		int realWidth = mColumnWidth;
-		int realHeight = imageMeta.height * realWidth / imageMeta.width;
+		int realHeight = imageMeta.getHeight() * realWidth
+				/ imageMeta.getWidth();
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
 				realWidth, realHeight);
 		// sort the mColumnRecords
-		Collections.sort(mColumnRecords, new Comparator<ColumnRecord>() {
+		Collections.sort(mColumnRecords, new Comparator<ColumnMeta>() {
 			@Override
-			public int compare(ColumnRecord lhs, ColumnRecord rhs) {
-				if (lhs.height < rhs.height) {
+			public int compare(ColumnMeta lhs, ColumnMeta rhs) {
+				if (lhs.getHeight() < rhs.getHeight()) {
 					return -1;
 				} else {
 					return 1;
 				}
 			}
 		});
-		ColumnRecord above = mColumnRecords.get(0);
-		above.height += realHeight;
+		ColumnMeta above = mColumnRecords.get(0);
+		above.addHeight(realHeight);
 		// find its upper view
-		if (above.topId == ColumnRecord.PARENT_TOP) {
+		if (above.getTopId() == ColumnMeta.PARENT_TOP) {
 			params.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 			params.topMargin = mMarginV; // top margin
 			params.bottomMargin = mMarginV; // bottom margin
 		} else {
-			params.addRule(RelativeLayout.BELOW, above.topId);
+			params.addRule(RelativeLayout.BELOW, above.getTopId());
 			params.topMargin = 0; // top margin
 			params.bottomMargin = mMarginV; // bottom margin
 		}
-		above.topId = id;
+		above.setTopId(id);
 		// find its left view
-		if (above.leftId == ColumnRecord.PARENT_LEFT) {
+		if (above.getLeftId() == ColumnMeta.PARENT_LEFT) {
 			params.addRule(RelativeLayout.ALIGN_PARENT_LEFT,
 					RelativeLayout.TRUE);
 			params.leftMargin = mMarginH;
 			params.rightMargin = mMarginH;
 		} else {
-			params.addRule(RelativeLayout.RIGHT_OF, above.leftId);
+			params.addRule(RelativeLayout.RIGHT_OF, above.getLeftId());
 			params.leftMargin = 0;
 			params.rightMargin = mMarginH;
 		}
 
 		// set the leftId of the right column of current
-		for (ColumnRecord record : mColumnRecords) {
-			if (record.column == (above.column + 1)) {
-				record.leftId = id;
+		for (ColumnMeta record : mColumnRecords) {
+			if (record.getColumn() == (above.getColumn() + 1)) {
+				record.setLeftId(id);
 				break;
 			}
 		}
@@ -220,8 +224,8 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Connect to the server and retrieve a json string which tells the a list
-	 * of image meta data.
+	 * decide <b><code>mColumnCnt</code></b>, <b><code>mColumnWidth</code></b>,
+	 * <b><code>mColumnRecord</code></b>
 	 */
 	private void prepareLayoutArguments() {
 		DisplayMetrics metrics = new DisplayMetrics();
@@ -233,12 +237,13 @@ public class MainActivity extends ActionBarActivity {
 		mColumnCnt = height > width ? 2 : 3;
 		mColumnWidth = (width - (mColumnCnt + 1) * mMarginH) / mColumnCnt;
 		for (int i = 1; i <= mColumnCnt; ++i) {
-			ColumnRecord record = new ColumnRecord();
-			record.height = 0;
-			record.column = i;
-			record.leftId = i == 1 ? ColumnRecord.PARENT_LEFT
-					: ColumnRecord.INVALID_LEFT;
-			record.topId = ColumnRecord.PARENT_TOP;
+			ColumnMeta record = new ColumnMeta();
+			record.setHeight(0);
+			record.setColumn(i);
+			record.setLeftId(i == 1 ? ColumnMeta.PARENT_LEFT
+					: ColumnMeta.INVALID_LEFT);
+			// the first row is all below parent top
+			record.setTopId(ColumnMeta.PARENT_TOP);
 			mColumnRecords.add(record);
 		}
 	}
@@ -292,12 +297,12 @@ public class MainActivity extends ActionBarActivity {
 		// REMOVE ALL THE IMAGE VIEWS
 		mLayout.removeAllViews();
 		// RESET PHOTOCOUNT
-		mPhotoCount = 0;
+		mImageCount = 0;
 		// RESET LAYOUT DATA STRUCTURE
 		mColumnRecords.clear();
 		prepareLayoutArguments();
 		// THEN RELOAD THE IMAGE META
-		loadImageMetaListAsync(mPhotoCount);
+		loadImageMetaListAsync(mImageCount);
 	}
 
 	/**
@@ -313,9 +318,10 @@ public class MainActivity extends ActionBarActivity {
 		}
 		final ImageTask task = mTaskList.get(mCurrentIndex);
 		++mCurrentIndex;
-		Bitmap bitmap = mFileCache.getBitmapFromCache(task.mImgMeta.url);
+		Bitmap bitmap = mFileCache.getBitmapFromCache(task.getImageMeta()
+				.getUrl());
 		if (bitmap != null) {
-			ImageView imgView = (ImageView) findViewById(task.mId);
+			ImageView imgView = (ImageView) findViewById(task.getImageViewId());
 			if (imgView != null) {
 				imgView.setImageBitmap(bitmap);
 			}
@@ -338,7 +344,7 @@ public class MainActivity extends ActionBarActivity {
 	 * @param task
 	 */
 	private void loadImage(ImageTask task) {
-		String url = task.mImgMeta.url;
+		String url = task.getImageMeta().getUrl();
 		HttpClient httpClient = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);
 
@@ -349,8 +355,8 @@ public class MainActivity extends ActionBarActivity {
 			Message msg = Message.obtain();
 			msg.what = IMAGE_LOADED;
 			Bundle data = new Bundle();
-			data.putInt("id", task.mId);
-			data.putString("url", task.mImgMeta.url);
+			data.putInt("id", task.getImageViewId());
+			data.putString("url", task.getImageMeta().getUrl());
 			data.putParcelable("bitmap", bitmap);
 			msg.setData(data);
 			mHandler.sendMessage(msg);
@@ -424,19 +430,7 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	/** A helper data structure to decide image layouts */
-	private ArrayList<ColumnRecord> mColumnRecords = new ArrayList<ColumnRecord>();
-
-	/** A helper data structure */
-	private class ColumnRecord {
-		int height;
-		int leftId;
-		int topId;
-		int column;
-
-		public static final int PARENT_LEFT = -1;
-		public static final int PARENT_TOP = -3;
-		public static final int INVALID_LEFT = -3;
-	}
+	private ArrayList<ColumnMeta> mColumnRecords = new ArrayList<ColumnMeta>();
 
 	/** Configuration parameter */
 	private int mMarginH = 8;
@@ -449,22 +443,9 @@ public class MainActivity extends ActionBarActivity {
 	/** Current index which has been loaded */
 	private int mCurrentIndex;
 
-	/** A helper data structure to describe image loading task */
-	private class ImageTask {
-		int mId;
-		ImageMeta mImgMeta;
+	private String mImagePath;
 
-		public ImageTask(int id, ImageMeta imgMeta) {
-			mId = id;
-			mImgMeta = imgMeta;
-		}
-	}
-
-	private String mPhotoPath;
-
-	private String mDevideId;
-
-	private int mPhotoCount = 0;
+	private int mImageCount = 0;
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -474,16 +455,14 @@ public class MainActivity extends ActionBarActivity {
 		} else if (id == R.id.action_camera_capture) {
 			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 			if (cameraIntent.resolveActivity(getPackageManager()) != null) {
-				// store this image to external storage
 				File imageFile = null;
 				try {
 					imageFile = createImageFile();
 				} catch (IOException e) {
-
+					// OMMIT THIS EXCEPTION
 				}
 				if (imageFile == null) {
-					// make toast and return
-					Toast.makeText(this, "Can not create Image file",
+					Toast.makeText(this, "SD card not found...",
 							Toast.LENGTH_LONG).show();
 					return true;
 				}
@@ -514,15 +493,14 @@ public class MainActivity extends ActionBarActivity {
 	private File createImageFile() throws IOException {
 		Time today = new Time(Time.getCurrentTimezone());
 		today.setToNow();
-		String timeStamp = today.format2445();
-		String imageFileName = mDevideId + "-" + timeStamp;
+		String imageFileName = today.format2445();
 		File imgCacheDir = new File(IMAGE_CACHE_PATH);
 		// If the folder does not exist, then create it..
 		if (!imgCacheDir.exists()) {
 			imgCacheDir.mkdirs();
 		}
 		File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
-		mPhotoPath = image.getAbsolutePath();
+		mImagePath = image.getAbsolutePath();
 		return image;
 	}
 
@@ -533,39 +511,15 @@ public class MainActivity extends ActionBarActivity {
 		if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 			// start the upload activity
 			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo", mPhotoPath);
+			uploadActivity.putExtra("photo", mImagePath);
 			startActivity(uploadActivity);
 		} else if (requestCode == REQUEST_IMAGE_SELECT
 				&& resultCode == RESULT_OK) {
 			Uri selected = data.getData();
 			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo", getRealPathFromUri(selected));
+			uploadActivity.putExtra("photo",
+					AppUtils.getRealPathFromUri(this, selected));
 			startActivity(uploadActivity);
 		}
 	}
-
-	/**
-	 * This code snippet is copied from
-	 * <a>http://stackoverflow.com/questions/2789276
-	 * /android-get-real-path-by-uri-getpath/9989900</a>
-	 * 
-	 * @param contentURI
-	 * @return
-	 */
-	private String getRealPathFromUri(Uri contentURI) {
-		String result;
-		Cursor cursor = getContentResolver().query(contentURI, null, null,
-				null, null);
-		if (cursor == null) {
-			result = contentURI.getPath();
-		} else {
-			cursor.moveToFirst();
-			int idx = cursor
-					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-			result = cursor.getString(idx);
-			cursor.close();
-		}
-		return result;
-	}
-
 }

@@ -20,6 +20,7 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import seaice.app.sharesight.utils.AppUtils;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
@@ -145,7 +146,6 @@ public class UploadActivity extends Activity {
 		HttpPost httppost = new HttpPost(IMAGE_HOST_SERVER);
 
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-
 		builder.addBinaryBody("file",
 				AppUtils.saveBitmapToFile(mBitmap, mPhotoPath));
 		builder.addTextBody("format", "redirect");

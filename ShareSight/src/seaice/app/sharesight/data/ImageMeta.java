@@ -1,15 +1,15 @@
-package seaice.app.sharesight;
+package seaice.app.sharesight.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
 public class ImageMeta implements Parcelable {
 
-	public String url;
+	private String url;
 
-	public int width;
+	private int width;
 
-	public int height;
+	private int height;
 
 	public ImageMeta(String url, int width, int height) {
 		this.url = url;
