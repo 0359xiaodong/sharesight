@@ -1,27 +1,33 @@
 package seaice.app.sharesight;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -33,13 +39,23 @@ public class UploadActivity extends Activity {
 	private ImageView mImgView;
 	/** Where to read the photo */
 	private String mPhotoPath;
+	/** Photo Width */
+	private int mPhotoWidth = 0;
+	/** Photo Height */
+	private int mPhotoHeight = 0;
+	/** Device Id to identify this app */
+	private String mDeviceId;
 
 	// The progress dialog to display percent ratio
 	private ProgressDialog mProgressDialog;
 
-	private static final int UPLOAD_SUCCESS = 1234;
+	private static final int UPLOAD_IMAGE = 1234;
 
-	private static final int UPLOAD_FAIL = 5678;
+	private static final int ADD_RECORD = 9012;
+
+	private static final String IMAGE_HOST_SERVER = "http://www.freeimagehosting.net/upl.php";
+
+	private static final String DATA_SERVER = "http://www.zhouhaibing.com/app/sharesight/addrecord";
 
 	private Handler handler = new MyHandler(this);
 
@@ -59,16 +75,22 @@ public class UploadActivity extends Activity {
 
 		@Override
 		public void handleMessage(Message msg) {
-			// success
-			if (msg.what == 1234) {
+			if (msg.what == UPLOAD_IMAGE) {
+				Bundle data = msg.getData();
+				boolean status = data.getBoolean("status");
+				if (status) {
+					String url = data.getString("url");
+					mHost.get().addRecordAsync(url);
+				} else {
+					Toast.makeText(mHost.get(), "Can not upload",
+							Toast.LENGTH_LONG).show();
+					mHost.get().finish();
+				}
+			} else if (msg.what == ADD_RECORD) {
+				mHost.get().mProgressDialog.dismiss();
 				Toast.makeText(mHost.get(), "Upload succeeds",
 						Toast.LENGTH_LONG).show();
 				mHost.get().finish();
-			}
-			// fails
-			if (msg.what == 5678) {
-				Toast.makeText(mHost.get(), "Upload fails", Toast.LENGTH_LONG)
-						.show();
 			}
 		}
 	}
@@ -78,8 +100,12 @@ public class UploadActivity extends Activity {
 		setContentView(R.layout.activity_upload);
 
 		mPhotoPath = getIntent().getStringExtra("photo");
-		Toast.makeText(this, mPhotoPath, Toast.LENGTH_LONG).show();
 		mImgView = (ImageView) findViewById(R.id.confirmImage);
+
+		TelephonyManager tm = (TelephonyManager) this
+				.getSystemService(TELEPHONY_SERVICE);
+		// how to identify this image
+		mDeviceId = tm.getDeviceId();
 	}
 
 	@Override
@@ -89,10 +115,11 @@ public class UploadActivity extends Activity {
 		setImageViewSource();
 	}
 
-	public void upload(View view) {
-		// begin the background upload
-		Log.d("Before Upload", "Uploading " + mPhotoPath);
+	public void cancel(View view) {
+		finish();
+	}
 
+	public void uploadAsync(View view) {
 		// this method runs in a separate thread
 		mProgressDialog = new ProgressDialog(this,
 				ProgressDialog.STYLE_HORIZONTAL);
@@ -103,87 +130,120 @@ public class UploadActivity extends Activity {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				bgUpload();
+				upload();
 			}
 		}).start();
 	}
 
-	public void cancel(View view) {
-		finish();
-	}
-
-	private void bgUpload() {
-		boolean posted = true;
+	private void upload() {
+		boolean status = true;
+		String imageUrl = "";
 
 		HttpClient httpclient = new DefaultHttpClient();
-		httpclient.getParams().setParameter(
-				CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-
-		HttpPost httppost = new HttpPost(
-				"http://www.zhouhaibing.com/app/sharesight/postImage");
+		HttpPost httppost = new HttpPost(IMAGE_HOST_SERVER);
 		File file = new File(mPhotoPath);
 
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-		builder.addPart("userfile", new FileBody(file));
-		// MultipartEntity mpEntity = new MultipartEntity();
-		// ContentBody cbFile = new FileBody(file);
-		// mpEntity.addPart("userfile", cbFile);
+		builder.addBinaryBody("file", file);
+		builder.addTextBody("format", "redirect");
 
 		httppost.setEntity(builder.build());
-		Log.d("Post Image File",
-				"executing request " + httppost.getRequestLine());
 
 		HttpResponse response;
 		try {
 			response = httpclient.execute(httppost);
-
 			HttpEntity resEntity = response.getEntity();
 
-			System.out.println(response.getStatusLine());
-			String retVal = "";
-			if (resEntity != null) {
-				retVal = EntityUtils.toString(resEntity, "utf-8");
-				Log.d("Response", retVal);
-			}
-			if (resEntity != null) {
-				resEntity.consumeContent();
-			}
-			httpclient.getConnectionManager().shutdown();
+			String output = EntityUtils.toString(resEntity);
+			Document doc = Jsoup.parse(output);
+			imageUrl = doc.getElementsByAttributeValue("name", "htmlthumb")
+					.attr("value");
+			Log.d("Uploaded Image Url", imageUrl);
+			resEntity.consumeContent();
 		} catch (Exception e) {
-			posted = false;
+			e.printStackTrace();
+			status = false;
 		}
 		Message msg = Message.obtain();
-		msg.what = posted ? UPLOAD_SUCCESS : UPLOAD_FAIL;
+		msg.what = UPLOAD_IMAGE;
+		Bundle data = new Bundle();
+		Log.d("Upload Status", String.valueOf(status));
+		data.putBoolean("status", status);
+		data.putString("url", imageUrl);
+		msg.setData(data);
 		handler.sendMessage(msg);
-		mProgressDialog.dismiss();
+	}
+
+	private void addRecordAsync(final String url) {
+
+		new Thread(new Runnable() {
+			public void run() {
+				addRecord(url, mDeviceId, mPhotoWidth, mPhotoHeight);
+			}
+		}).start();
+	}
+
+	private void addRecord(String url, String deviceId, int width, int height) {
+		boolean status = true;
+
+		HttpClient httpClient = new DefaultHttpClient();
+		HttpPost httpPost = new HttpPost(DATA_SERVER);
+
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		params.add(new BasicNameValuePair("url", url));
+		params.add(new BasicNameValuePair("deviceId", deviceId));
+		params.add(new BasicNameValuePair("width", width + ""));
+		params.add(new BasicNameValuePair("height", height + ""));
+
+		try {
+			httpPost.setEntity(new UrlEncodedFormEntity(params));
+			HttpResponse response = httpClient.execute(httpPost);
+			System.out.println(EntityUtils.toString(response.getEntity()));
+		} catch (Exception e) {
+			status = false;
+		}
+
+		Message msg = Message.obtain();
+		msg.what = ADD_RECORD;
+		Bundle data = new Bundle();
+		data.putBoolean("status", status);
+		msg.setData(data);
+		handler.sendMessage(msg);
 	}
 
 	private void setImageViewSource() {
-		Intent intent = getIntent();
-		String photoPath = intent.getStringExtra("photo");
-
-		// Get the dimensions of the View
-		int targetW = mImgView.getWidth();
-		int targetH = mImgView.getHeight();
-
-		// Get the dimensions of the bitmap
-		BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-		bmOptions.inJustDecodeBounds = true;
-		BitmapFactory.decodeFile(photoPath, bmOptions);
-		int photoW = bmOptions.outWidth;
-		int photoH = bmOptions.outHeight;
-
-		// Determine how much to scale down the image
-		int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-		// Decode the image file into a Bitmap sized to fill the View
-		bmOptions.inJustDecodeBounds = false;
-		bmOptions.inSampleSize = scaleFactor;
-		bmOptions.inPurgeable = true;
-
-		Bitmap bitmap = BitmapFactory.decodeFile(photoPath, bmOptions);
-		// add border-radius
-		mImgView.setImageBitmap(bitmap);
+		File imageFile = new File(mPhotoPath);
+		try {
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inJustDecodeBounds = true;
+			FileInputStream stream1 = new FileInputStream(imageFile);
+			BitmapFactory.decodeStream(stream1, null, options);
+			stream1.close();
+			final int REQUIRED_SIZE = 70;
+			mPhotoWidth = options.outWidth;
+			mPhotoHeight = options.outHeight;
+			int width = options.outWidth, height = options.outHeight;
+			int scale = 1;
+			while (true) {
+				if (width / 2 < REQUIRED_SIZE || height / 2 < REQUIRED_SIZE)
+					break;
+				width /= 2;
+				height /= 2;
+				scale *= 2;
+			}
+			if (scale >= 2) {
+				scale /= 2;
+			}
+			// decode with inSampleSize
+			BitmapFactory.Options options2 = new BitmapFactory.Options();
+			options2.inSampleSize = scale;
+			FileInputStream stream2 = new FileInputStream(imageFile);
+			Bitmap bitmap = BitmapFactory.decodeStream(stream2, null, options2);
+			mImgView.setImageBitmap(bitmap);
+			stream2.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

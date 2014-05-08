@@ -6,8 +6,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -15,6 +14,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import seaice.app.sharesight.cache.FileCache;
+import seaice.app.sharesight.views.MyScrollView;
+import seaice.app.sharesight.views.MyScrollView.ScrollViewListener;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
@@ -34,6 +36,7 @@ import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -59,11 +62,18 @@ public class MainActivity extends ActionBarActivity {
 	 * The container to hold all the ImageViews
 	 */
 	private RelativeLayout mLayout;
-
 	/**
 	 * While taking communication with server, show this dialog
 	 */
 	private ProgressDialog mProgressDialog;
+	/**
+	 * The ScrollView container..
+	 */
+	private MyScrollView mScrollView;
+
+	private FileCache mFileCache;
+
+	/** Activity status variable */
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -73,114 +83,58 @@ public class MainActivity extends ActionBarActivity {
 		// we need the imei number to identify this mobile
 		TelephonyManager tm = (TelephonyManager) this
 				.getSystemService(TELEPHONY_SERVICE);
-		mMobileId = tm.getDeviceId();
+		mDevideId = tm.getDeviceId();
 
 		mLayout = (RelativeLayout) findViewById(R.id.layout);
+		mScrollView = (MyScrollView) findViewById(R.id.container);
+
+		mScrollView.setScrollViewListener(new ScrollViewListener() {
+
+			@Override
+			public void onScrollChanged(MyScrollView scrollView, int x, int y,
+					int oldx, int oldy) {
+				View view = (View) scrollView.getChildAt(scrollView
+						.getChildCount() - 1);
+				int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
+						.getScrollY()));
+
+				if (diff == 0) {
+					// load the next page photo list
+					loadImageMetaListAsync(mPhotoCount);
+				}
+			}
+
+		});
+
+		mFileCache = new FileCache();
+	}
+
+	public void onStart() {
+		super.onStart();
+		if (mCurrentIndex > 0) {
+			restoreFromTaskList();
+			return;
+		}
+		// READD IMAGE VIEW LIST
+		// If it the second time to display the ImageMetaList
 		mProgressDialog = new ProgressDialog(this,
 				ProgressDialog.STYLE_HORIZONTAL);
 		mProgressDialog.setMessage("Loading...");
-
-		loadImageMetaData();
+		// PREPARE LAYOUT
+		prepareLayoutArguments();
+		// LOAD IMAGE META LIST
+		mPhotoCount = 0;
+		loadImageMetaListAsync(mPhotoCount);
 	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu items for use in the action bar
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.main, menu);
-		return super.onCreateOptionsMenu(menu);
-
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
-		} else if (id == R.id.action_camera_capture) {
-			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-			if (cameraIntent.resolveActivity(getPackageManager()) != null) {
-				// store this image to external storage
-				File imageFile = null;
-				try {
-					imageFile = createImageFile();
-				} catch (IOException e) {
-
-				}
-				if (imageFile == null) {
-					// make toast and return
-					Toast.makeText(this, "Can not create Image file",
-							Toast.LENGTH_LONG).show();
-					return true;
-				}
-				cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,
-						Uri.fromFile(imageFile));
-				startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
-			}
-			return true;
-		} else if (id == R.id.action_camera_select) {
-			Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-			photoPickerIntent.setType("image/*");
-			startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
+	public void onStop() {
+		super.onStop();
+		// HERE WE NEED TO FREE MEMORY
+		// REMOVE ALL THE IMAGE VIEWS
+		for (int i = 0; i < mLayout.getChildCount(); ++i) {
+			ImageView imgView = (ImageView) mLayout.getChildAt(i);
+			imgView.setImageBitmap(null);
 		}
-		return super.onOptionsItemSelected(item);
-	}
-
-	private File createImageFile() throws IOException {
-		Time today = new Time(Time.getCurrentTimezone());
-		today.setToNow();
-		String timeStamp = today.format2445();
-		String imageFileName = mMobileId + "-" + timeStamp;
-		File imgCacheDir = new File(IMAGE_CACHE_PATH);
-		// If the folder does not exist, then create it..
-		if (!imgCacheDir.exists()) {
-			imgCacheDir.mkdirs();
-		}
-		File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
-		mPhotoPath = image.getAbsolutePath();
-		return image;
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		// when the camera activity returns, we need to let the user confirm
-		// this image, then upload
-		if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-			// start the upload activity
-			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo", mPhotoPath);
-			startActivity(uploadActivity);
-		} else if (requestCode == REQUEST_IMAGE_SELECT
-				&& resultCode == RESULT_OK) {
-			Uri selected = data.getData();
-			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo", getRealPathFromUri(selected));
-			startActivity(uploadActivity);
-		}
-	}
-
-	/**
-	 * This code snippet is copied from
-	 * <a>http://stackoverflow.com/questions/2789276
-	 * /android-get-real-path-by-uri-getpath/9989900</a>
-	 * 
-	 * @param contentURI
-	 * @return
-	 */
-	private String getRealPathFromUri(Uri contentURI) {
-		String result;
-		Cursor cursor = getContentResolver().query(contentURI, null, null,
-				null, null);
-		if (cursor == null) {
-			result = contentURI.getPath();
-		} else {
-			cursor.moveToFirst();
-			int idx = cursor
-					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-			result = cursor.getString(idx);
-			cursor.close();
-		}
-		return result;
 	}
 
 	/**
@@ -189,12 +143,16 @@ public class MainActivity extends ActionBarActivity {
 	 * 
 	 * @param imageMetaList
 	 */
-	private void addImageViewList(ArrayList<ImageMeta> imageMetaList) {
+	private void appendImageViewList(List<ImageMeta> imageMetaList) {
 		mProgressDialog.dismiss();
+		mPhotoCount += imageMetaList.size();
 		for (ImageMeta imageMeta : imageMetaList) {
-			addImageView(imageMeta);
+			int retId = appendImageView(imageMeta);
+			// QUEUE THIS TASK
+			mTaskList.add(new ImageTask(retId, imageMeta));
 		}
-		loadImage();
+		// LOAD IMAGE => HANDLE THE QUEUE TASK
+		loadImageAsync();
 	}
 
 	/**
@@ -202,7 +160,7 @@ public class MainActivity extends ActionBarActivity {
 	 * 
 	 * @param imageMeta
 	 */
-	private void addImageView(ImageMeta imageMeta) {
+	private int appendImageView(ImageMeta imageMeta) {
 		// assign a new id for this ImageView
 		int id = AppUtils.generateViewId();
 		ImageView imageView = new ImageView(this);
@@ -258,15 +216,14 @@ public class MainActivity extends ActionBarActivity {
 		imageView.setBackgroundColor(Color.GRAY);
 		mLayout.addView(imageView, params);
 
-		// add the pair(id and image meta)
-		taskQueue.offer(new ImageTask(id, imageMeta));
+		return id;
 	}
 
 	/**
 	 * Connect to the server and retrieve a json string which tells the a list
 	 * of image meta data.
 	 */
-	private void loadImageMetaData() {
+	private void prepareLayoutArguments() {
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
 		int width = metrics.widthPixels;
@@ -275,8 +232,6 @@ public class MainActivity extends ActionBarActivity {
 		// and three columns when on landscape view
 		mColumnCnt = height > width ? 2 : 3;
 		mColumnWidth = (width - (mColumnCnt + 1) * mMarginH) / mColumnCnt;
-		// initialize the column position records
-		mColumnRecords = new ArrayList<ColumnRecord>();
 		for (int i = 1; i <= mColumnCnt; ++i) {
 			ColumnRecord record = new ColumnRecord();
 			record.height = 0;
@@ -286,23 +241,30 @@ public class MainActivity extends ActionBarActivity {
 			record.topId = ColumnRecord.PARENT_TOP;
 			mColumnRecords.add(record);
 		}
+	}
 
+	private void loadImageMetaListAsync(final int begin) {
 		mProgressDialog.show();
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				bgLoadImageMetaData();
+				loadImageMetaList(begin);
 			}
 		}).start();
+	}
+
+	private void restoreFromTaskList() {
+		mCurrentIndex = 0;
+		loadImageAsync();
 	}
 
 	/**
 	 * Real networking here.. User gson library to convert a json string to an
 	 * object.
 	 */
-	private void bgLoadImageMetaData() {
+	private void loadImageMetaList(int begin) {
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(IMAGE_META_SERVER);
+		HttpGet httpGet = new HttpGet(IMAGE_META_SERVER + "/" + begin);
 		ArrayList<ImageMeta> imageMetaList = new ArrayList<ImageMeta>();
 
 		try {
@@ -326,21 +288,43 @@ public class MainActivity extends ActionBarActivity {
 		mHandler.sendMessage(msg);
 	}
 
+	private void refresh() {
+		// REMOVE ALL THE IMAGE VIEWS
+		mLayout.removeAllViews();
+		// RESET PHOTOCOUNT
+		mPhotoCount = 0;
+		// RESET LAYOUT DATA STRUCTURE
+		mColumnRecords.clear();
+		prepareLayoutArguments();
+		// THEN RELOAD THE IMAGE META
+		loadImageMetaListAsync(mPhotoCount);
+	}
+
 	/**
 	 * Load a single Image from url, the parameter is retrieved from the task
 	 * queue. Which includes the assigned id and the target image meta data.
 	 * Since it will block the UI thread, so I place the downloading code into
 	 * another function and start a new thread to run it..
 	 */
-	private void loadImage() {
-		final ImageTask task = taskQueue.poll();
-		if (task == null) {
+	private void loadImageAsync() {
+		if (mCurrentIndex == mTaskList.size()) {
+			// IF ALL THE TASK ARE DONE, THEN RETURN
+			return;
+		}
+		final ImageTask task = mTaskList.get(mCurrentIndex);
+		++mCurrentIndex;
+		Bitmap bitmap = mFileCache.getBitmapFromCache(task.mImgMeta.url);
+		if (bitmap != null) {
+			ImageView imgView = (ImageView) findViewById(task.mId);
+			imgView.setImageBitmap(bitmap);
+			// CONTINUE LOADING
+			loadImageAsync();
 			return;
 		}
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				bgLoadImage(task);
+				loadImage(task);
 			}
 		}).start();
 
@@ -351,7 +335,7 @@ public class MainActivity extends ActionBarActivity {
 	 * 
 	 * @param task
 	 */
-	private void bgLoadImage(ImageTask task) {
+	private void loadImage(ImageTask task) {
 		String url = task.mImgMeta.url;
 		HttpClient httpClient = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);
@@ -364,11 +348,15 @@ public class MainActivity extends ActionBarActivity {
 			msg.what = IMAGE_LOADED;
 			Bundle data = new Bundle();
 			data.putInt("id", task.mId);
+			data.putString("url", task.mImgMeta.url);
 			data.putParcelable("bitmap", bitmap);
 			msg.setData(data);
 			mHandler.sendMessage(msg);
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (OutOfMemoryError error) {
+			// when decode the url stream, there are out of memory error
+
 		}
 	}
 
@@ -390,7 +378,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getImage";
 
 	private static final String IMAGE_CACHE_PATH = Environment
-			.getExternalStorageDirectory() + "/ShareSight/cache/image";
+			.getExternalStorageDirectory() + "/ShareSight/cache/capture";
 
 	private static final String IMAGE_META_TAG = "IMAGEMETA";
 
@@ -414,22 +402,27 @@ public class MainActivity extends ActionBarActivity {
 				ArrayList<ImageMeta> imageMetaList = msg.getData()
 						.getParcelableArrayList(IMAGE_META_TAG);
 				if (mHost != null) {
-					// try to add only one
-					mHost.get().addImageViewList(imageMetaList);
+					// ADD A LIST OF IMAGE VIEW
+					mHost.get().appendImageViewList(imageMetaList);
 				}
 			}
 			if (msg.what == IMAGE_LOADED) {
 				Bitmap bitmap = msg.getData().getParcelable("bitmap");
+				String url = msg.getData().getString("url");
 				int id = msg.getData().getInt("id");
-				ImageView imgView = (ImageView) mHost.get().findViewById(id);
-				imgView.setImageBitmap(bitmap);
-				mHost.get().loadImage();
+				if (mHost != null) {
+					mHost.get().mFileCache.addToCache(url, bitmap);
+					ImageView imgView = (ImageView) mHost.get()
+							.findViewById(id);
+					imgView.setImageBitmap(bitmap);
+					mHost.get().loadImageAsync();
+				}
 			}
 		}
 	}
 
 	/** A helper data structure to decide image layouts */
-	private ArrayList<ColumnRecord> mColumnRecords;
+	private ArrayList<ColumnRecord> mColumnRecords = new ArrayList<ColumnRecord>();
 
 	/** A helper data structure */
 	private class ColumnRecord {
@@ -450,7 +443,9 @@ public class MainActivity extends ActionBarActivity {
 	private int mColumnCnt = 0;
 
 	/** Store the image loading task */
-	private Queue<ImageTask> taskQueue = new LinkedList<ImageTask>();
+	private List<ImageTask> mTaskList = new ArrayList<ImageTask>();
+	/** Current index which has been loaded */
+	private int mCurrentIndex;
 
 	/** A helper data structure to describe image loading task */
 	private class ImageTask {
@@ -465,5 +460,110 @@ public class MainActivity extends ActionBarActivity {
 
 	private String mPhotoPath;
 
-	private String mMobileId;
+	private String mDevideId;
+
+	private int mPhotoCount = 0;
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		int id = item.getItemId();
+		if (id == R.id.action_settings) {
+			return true;
+		} else if (id == R.id.action_camera_capture) {
+			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+			if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+				// store this image to external storage
+				File imageFile = null;
+				try {
+					imageFile = createImageFile();
+				} catch (IOException e) {
+
+				}
+				if (imageFile == null) {
+					// make toast and return
+					Toast.makeText(this, "Can not create Image file",
+							Toast.LENGTH_LONG).show();
+					return true;
+				}
+				cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+						Uri.fromFile(imageFile));
+				startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+			}
+			return true;
+		} else if (id == R.id.action_camera_select) {
+			Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+			photoPickerIntent.setType("image/*");
+			startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
+		} else if (id == R.id.action_refresh) {
+			refresh();
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu items for use in the action bar
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main, menu);
+		return super.onCreateOptionsMenu(menu);
+
+	}
+
+	private File createImageFile() throws IOException {
+		Time today = new Time(Time.getCurrentTimezone());
+		today.setToNow();
+		String timeStamp = today.format2445();
+		String imageFileName = mDevideId + "-" + timeStamp;
+		File imgCacheDir = new File(IMAGE_CACHE_PATH);
+		// If the folder does not exist, then create it..
+		if (!imgCacheDir.exists()) {
+			imgCacheDir.mkdirs();
+		}
+		File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
+		mPhotoPath = image.getAbsolutePath();
+		return image;
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// when the camera activity returns, we need to let the user confirm
+		// this image, then upload
+		if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+			// start the upload activity
+			Intent uploadActivity = new Intent(this, UploadActivity.class);
+			uploadActivity.putExtra("photo", mPhotoPath);
+			startActivity(uploadActivity);
+		} else if (requestCode == REQUEST_IMAGE_SELECT
+				&& resultCode == RESULT_OK) {
+			Uri selected = data.getData();
+			Intent uploadActivity = new Intent(this, UploadActivity.class);
+			uploadActivity.putExtra("photo", getRealPathFromUri(selected));
+			startActivity(uploadActivity);
+		}
+	}
+
+	/**
+	 * This code snippet is copied from
+	 * <a>http://stackoverflow.com/questions/2789276
+	 * /android-get-real-path-by-uri-getpath/9989900</a>
+	 * 
+	 * @param contentURI
+	 * @return
+	 */
+	private String getRealPathFromUri(Uri contentURI) {
+		String result;
+		Cursor cursor = getContentResolver().query(contentURI, null, null,
+				null, null);
+		if (cursor == null) {
+			result = contentURI.getPath();
+		} else {
+			cursor.moveToFirst();
+			int idx = cursor
+					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+			result = cursor.getString(idx);
+			cursor.close();
+		}
+		return result;
+	}
+
 }
