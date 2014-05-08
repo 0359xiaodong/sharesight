@@ -37,6 +37,8 @@ public class UploadActivity extends Activity {
 
 	/** The preview image view */
 	private ImageView mImgView;
+	/** The Bitmap */
+	private Bitmap mBitmap;
 	/** Where to read the photo */
 	private String mPhotoPath;
 	/** Photo Width */
@@ -141,10 +143,11 @@ public class UploadActivity extends Activity {
 
 		HttpClient httpclient = new DefaultHttpClient();
 		HttpPost httppost = new HttpPost(IMAGE_HOST_SERVER);
-		File file = new File(mPhotoPath);
 
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-		builder.addBinaryBody("file", file);
+
+		builder.addBinaryBody("file",
+				AppUtils.saveBitmapToFile(mBitmap, mPhotoPath));
 		builder.addTextBody("format", "redirect");
 
 		httppost.setEntity(builder.build());
@@ -238,8 +241,8 @@ public class UploadActivity extends Activity {
 			BitmapFactory.Options options2 = new BitmapFactory.Options();
 			options2.inSampleSize = scale;
 			FileInputStream stream2 = new FileInputStream(imageFile);
-			Bitmap bitmap = BitmapFactory.decodeStream(stream2, null, options2);
-			mImgView.setImageBitmap(bitmap);
+			mBitmap = BitmapFactory.decodeStream(stream2, null, options2);
+			mImgView.setImageBitmap(mBitmap);
 			stream2.close();
 		} catch (IOException e) {
 			e.printStackTrace();

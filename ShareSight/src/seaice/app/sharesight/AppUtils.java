@@ -3,6 +3,7 @@ package seaice.app.sharesight;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,5 +67,18 @@ public class AppUtils {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static File saveBitmapToFile(Bitmap bitmap, String name) {
+		File file = new File(name);
+		FileOutputStream out;
+		try {
+			out = new FileOutputStream(file);
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+			out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return file;
 	}
 }

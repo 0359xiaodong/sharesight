@@ -316,7 +316,9 @@ public class MainActivity extends ActionBarActivity {
 		Bitmap bitmap = mFileCache.getBitmapFromCache(task.mImgMeta.url);
 		if (bitmap != null) {
 			ImageView imgView = (ImageView) findViewById(task.mId);
-			imgView.setImageBitmap(bitmap);
+			if (imgView != null) {
+				imgView.setImageBitmap(bitmap);
+			}
 			// CONTINUE LOADING
 			loadImageAsync();
 			return;
