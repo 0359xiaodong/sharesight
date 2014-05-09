@@ -1,9 +1,11 @@
 package seaice.app.sharesight.poster;
 
-import seaice.app.sharesight.http.HttpTextTaskClient;
-import seaice.app.sharesight.http.TextTaskResult;
+import android.os.Bundle;
+import seaice.app.sharesight.http.TextResult;
+import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.post.FileTask;
 
-public class ImagePoster implements HttpTextTaskClient {
+public class ImagePoster implements TextResultCallback {
 
 	private ImagePosterCallback mCallback;
 
@@ -11,12 +13,13 @@ public class ImagePoster implements HttpTextTaskClient {
 		mCallback = callback;
 	}
 
-	public void upload(String path) {
-
+	public void upload(String url, String fileTag, String filePath) {
+		Bundle data = new Bundle();
+		new FileTask(this).execute(data);
 	}
 
 	@Override
-	public void onGetTextTaskResult(TextTaskResult result) {
+	public void onGetTextResult(TextResult textResult) {
 		mCallback.onUploadDone(true, "OK");
 	}
 

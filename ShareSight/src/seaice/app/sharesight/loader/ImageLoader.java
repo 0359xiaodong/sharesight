@@ -3,15 +3,14 @@ package seaice.app.sharesight.loader;
 import java.util.ArrayList;
 
 import seaice.app.sharesight.data.ImageMeta;
-import seaice.app.sharesight.http.BitmapTaskParam;
-import seaice.app.sharesight.http.BitmapTaskResult;
-import seaice.app.sharesight.http.HttpBitmapTask;
-import seaice.app.sharesight.http.HttpTextTask;
-import seaice.app.sharesight.http.HttpBitmapTaskClient;
-import seaice.app.sharesight.http.HttpTextTaskClient;
-import seaice.app.sharesight.http.TextTaskParam;
-import seaice.app.sharesight.http.TextTaskResult;
+import seaice.app.sharesight.http.ImageResult;
+import seaice.app.sharesight.http.ImageResultCallback;
+import seaice.app.sharesight.http.TextResult;
+import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.get.ImageTask;
+import seaice.app.sharesight.http.get.TextTask;
 import android.graphics.Bitmap;
+import android.os.Bundle;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -24,9 +23,13 @@ import com.google.gson.JsonParser;
  * @author zhb
  * 
  */
-public class ImageLoader implements HttpTextTaskClient, HttpBitmapTaskClient {
+public class ImageLoader implements TextResultCallback, ImageResultCallback {
 
 	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getimage";
+
+	private static final String RESOURCE_ID_TAG = "RESOURCE_ID";
+
+	private static final String URL_TAG = "URL";
 
 	private ImageLoaderCallback mCallback;
 
@@ -40,7 +43,9 @@ public class ImageLoader implements HttpTextTaskClient, HttpBitmapTaskClient {
 	public void loadImageMetaList(int begin) {
 		mCallback.beforeLoadImageMeta();
 		String url = IMAGE_META_SERVER + "/" + begin;
-		new HttpTextTask(this).execute(new TextTaskParam(url));
+		Bundle data = new Bundle();
+		data.putString(URL_TAG, url);
+		new TextTask(this).execute(data);
 	}
 
 	public void loadImage(ImageLoaderTask task) {
@@ -56,12 +61,15 @@ public class ImageLoader implements HttpTextTaskClient, HttpBitmapTaskClient {
 		}
 
 		mCallback.beforeLoadImageMeta();
-		new HttpBitmapTask(this).execute(new BitmapTaskParam(imageViewId, url));
+		Bundle data = new Bundle();
+		data.putInt(RESOURCE_ID_TAG, imageViewId);
+		data.putString(URL_TAG, url);
+		new ImageTask(this).execute(data);
 	}
 
 	@Override
-	public void onGetTextTaskResult(TextTaskResult result) {
-		String json = result.getContent();
+	public void onGetTextResult(TextResult result) {
+		String json = result.getText();
 		if (json == null) {
 			return;
 		}
@@ -77,10 +85,10 @@ public class ImageLoader implements HttpTextTaskClient, HttpBitmapTaskClient {
 	}
 
 	@Override
-	public void onGetBitmapTaskResult(BitmapTaskResult bitmapResult) {
-		int imageViewId = bitmapResult.getImageViewId();
-		String url = bitmapResult.getUrl();
-		Bitmap bitmap = bitmapResult.getBitmap();
+	public void onGetImageResult(ImageResult imageResult) {
+		int imageViewId = imageResult.getData().getInt(RESOURCE_ID_TAG);
+		String url = imageResult.getData().getString(URL_TAG);
+		Bitmap bitmap = imageResult.getBitmap();
 		if (bitmap != null) {
 			// Here how to save it to cache
 			mFileCache.addToCache(url, bitmap);
