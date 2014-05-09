@@ -11,12 +11,12 @@ import org.apache.http.util.EntityUtils;
 
 import android.os.AsyncTask;
 
-public class HttpTextTask extends
+public class TextTask extends
 		AsyncTask<TextTaskParam, Integer, TextTaskResult> {
 
-	private HttpTextTaskClient mClient;
+	private TextTaskClient mClient;
 
-	public HttpTextTask(HttpTextTaskClient client) {
+	public TextTask(TextTaskClient client) {
 		super();
 		mClient = client;
 	}

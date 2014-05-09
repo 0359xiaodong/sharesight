@@ -10,12 +10,12 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
-public class HttpBitmapTask extends
+public class BitmapTask extends
 		AsyncTask<BitmapTaskParam, Integer, BitmapTaskResult> {
 
-	private HttpBitmapTaskClient mClient;
+	private BitmapTaskClient mClient;
 
-	public HttpBitmapTask(HttpBitmapTaskClient client) {
+	public BitmapTask(BitmapTaskClient client) {
 		super();
 
 		mClient = client;

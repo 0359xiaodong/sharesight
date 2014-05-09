@@ -1,6 +1,6 @@
 package seaice.app.sharesight.http;
 
-public interface HttpTextTaskClient {
+public interface TextTaskClient {
 
 	public void onGetTextTaskResult(TextTaskResult result);
 }

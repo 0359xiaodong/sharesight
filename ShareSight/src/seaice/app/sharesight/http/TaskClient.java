@@ -1,6 +1,6 @@
 package seaice.app.sharesight.http;
 
-public interface HttpTaskClient {
+public interface TaskClient {
 
 	public void onTimeout();
 	

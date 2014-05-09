@@ -8,12 +8,12 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import android.os.AsyncTask;
 
-public class HttpFilePostTask extends
+public class FilePostTask extends
 		AsyncTask<FilePostTaskParam, Integer, TextTaskResult> {
 
 	private HttpFilePostTaskClient mClient;
 
-	public HttpFilePostTask(HttpFilePostTaskClient client) {
+	public FilePostTask(HttpFilePostTaskClient client) {
 		super();
 		mClient = client;
 	}
