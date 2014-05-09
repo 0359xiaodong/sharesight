@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.http.ImageResult;
-import seaice.app.sharesight.http.ImageResultCallback;
+import seaice.app.sharesight.http.ImageResultClient;
 import seaice.app.sharesight.http.TextResult;
-import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.TextResultClient;
 import seaice.app.sharesight.http.get.ImageTask;
 import seaice.app.sharesight.http.get.TextTask;
 import android.graphics.Bitmap;
@@ -23,13 +23,13 @@ import com.google.gson.JsonParser;
  * @author zhb
  * 
  */
-public class ImageLoader implements TextResultCallback, ImageResultCallback {
+public class ImageLoader implements TextResultClient, ImageResultClient {
 
 	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getimage";
 
 	private static final String RESOURCE_ID_TAG = "RESOURCE_ID";
 
-	private static final String URL_TAG = "URL";
+	private static final String URL_TAG = "url";
 
 	private ImageLoaderCallback mCallback;
 
@@ -94,6 +94,10 @@ public class ImageLoader implements TextResultCallback, ImageResultCallback {
 			mFileCache.addToCache(url, bitmap);
 		}
 		mCallback.onImageLoaded(imageViewId, bitmap);
+	}
+
+	public String getUrlTag() {
+		return URL_TAG;
 	}
 
 }

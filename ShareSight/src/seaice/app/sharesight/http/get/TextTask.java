@@ -10,17 +10,17 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import seaice.app.sharesight.http.TextResult;
-import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.TextResultClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
 public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 
-	private TextResultCallback mCallback;
+	private TextResultClient mClient;
 
-	public TextTask(TextResultCallback callback) {
+	public TextTask(TextResultClient client) {
 		super();
-		mCallback = callback;
+		mClient = client;
 	}
 
 	@Override
@@ -28,7 +28,7 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 		Bundle param = params[0];
 
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(param.getString("url"));
+		HttpGet httpGet = new HttpGet(mClient.getUrlTag());
 
 		try {
 			HttpResponse response = httpClient.execute(httpGet);
@@ -42,6 +42,6 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 	}
 
 	protected void onPostExecute(TextResult result) {
-		mCallback.onGetTextResult(result);
+		mClient.onGetTextResult(result);
 	}
 }

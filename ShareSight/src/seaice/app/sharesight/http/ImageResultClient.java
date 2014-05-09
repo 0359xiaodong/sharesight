@@ -1,6 +1,6 @@
 package seaice.app.sharesight.http;
 
-public interface ImageResultCallback extends ResultCallback {
+public interface ImageResultClient extends ResultClient {
 
 	public void onGetImageResult(ImageResult imageResult);
 

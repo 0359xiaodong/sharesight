@@ -2,10 +2,10 @@ package seaice.app.sharesight.poster;
 
 import android.os.Bundle;
 import seaice.app.sharesight.http.TextResult;
-import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.TextResultClient;
 import seaice.app.sharesight.http.post.FileTask;
 
-public class ImagePoster implements TextResultCallback {
+public class ImagePoster implements TextResultClient {
 
 	private ImagePosterCallback mCallback;
 
@@ -21,6 +21,10 @@ public class ImagePoster implements TextResultCallback {
 	@Override
 	public void onGetTextResult(TextResult textResult) {
 		mCallback.onUploadDone(true, "OK");
+	}
+	
+	public String getUrlTag() {
+		return "url";
 	}
 
 }

@@ -8,25 +8,25 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import seaice.app.sharesight.http.ImageResult;
-import seaice.app.sharesight.http.ImageResultCallback;
+import seaice.app.sharesight.http.ImageResultClient;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
 public class ImageTask extends AsyncTask<Bundle, Integer, ImageResult> {
 
-	private ImageResultCallback mCallback;
+	private ImageResultClient mClient;
 
-	public ImageTask(ImageResultCallback callback) {
+	public ImageTask(ImageResultClient client) {
 		super();
-		mCallback = callback;
+		mClient = client;
 	}
 
 	@Override
 	protected ImageResult doInBackground(Bundle... args) {
 		Bundle param = args[0];
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(param.getString("url"));
+		HttpGet httpGet = new HttpGet(mClient.getUrlTag());
 
 		try {
 			HttpResponse response = httpClient.execute(httpGet);
@@ -39,6 +39,6 @@ public class ImageTask extends AsyncTask<Bundle, Integer, ImageResult> {
 	}
 
 	protected void onPostExecute(ImageResult imageResult) {
-		mCallback.onGetImageResult(imageResult);
+		mClient.onGetImageResult(imageResult);
 	}
 }

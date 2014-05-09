@@ -1,15 +1,15 @@
 package seaice.app.sharesight.http.post;
 
 import seaice.app.sharesight.http.TextResult;
-import seaice.app.sharesight.http.TextResultCallback;
+import seaice.app.sharesight.http.TextResultClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
 public class TextTask extends AsyncTask<Bundle, Integer, TextResult>{
 	
-	private TextResultCallback mCallback;
+	private TextResultClient mCallback;
 	
-	public TextTask(TextResultCallback callback) {
+	public TextTask(TextResultClient callback) {
 		super();
 		mCallback = callback;
 	}

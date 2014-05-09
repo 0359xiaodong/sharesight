@@ -1,6 +1,6 @@
 package seaice.app.sharesight.http;
 
-public interface TextResultCallback extends ResultCallback {
+public interface TextResultClient extends ResultClient {
 
 	public void onGetTextResult(TextResult textResult);
 }
