@@ -44,6 +44,8 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 			return null;
 		}
 		for (int i = 0; i < keyArray.size(); ++i) {
+			System.out.println("Add " + keyArray.get(i) + ", "
+					+ valueArray.get(i));
 			postParams.add(new BasicNameValuePair(keyArray.get(i), valueArray
 					.get(i)));
 		}

@@ -67,10 +67,11 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
 	@Override
 	public void onGetTextResult(TextResult result) {
-		String json = result.getText();
-		if (json == null) {
+		if (result == null) {
+			mCallback.afterLoadImageMeta();
 			return;
 		}
+		String json = result.getText();
 		ArrayList<ImageMeta> imageMetaList = new ArrayList<ImageMeta>();
 		JsonParser parser = new JsonParser();
 		Gson gson = new Gson();

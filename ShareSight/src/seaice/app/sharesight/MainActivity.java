@@ -312,7 +312,7 @@ public class MainActivity extends ActionBarActivity implements
 				&& resultCode == RESULT_OK) {
 			Uri selected = data.getData();
 			Intent uploadActivity = new Intent(this, UploadActivity.class);
-			uploadActivity.putExtra("photo",
+			uploadActivity.putExtra(IMAGE_PATH_TAG,
 					AppUtils.getRealPathFromUri(this, selected));
 			startActivity(uploadActivity);
 		}

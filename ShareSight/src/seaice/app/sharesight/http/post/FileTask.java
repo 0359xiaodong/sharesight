@@ -50,6 +50,8 @@ public class FileTask extends AsyncTask<Bundle, Integer, TextResult> {
 			return null;
 		}
 		for (int i = 0; i < fileKeyArray.size(); ++i) {
+			System.out.println("Add: " + fileKeyArray.get(i) + ", "
+					+ fileValueArray.get(i));
 			builder.addBinaryBody(fileKeyArray.get(i),
 					new File(fileValueArray.get(i)));
 		}
@@ -63,17 +65,17 @@ public class FileTask extends AsyncTask<Bundle, Integer, TextResult> {
 		}
 
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpPost httpPost = new HttpPost();
+		HttpPost httpPost = new HttpPost(data.getString(URL_TAG));
 		httpPost.setEntity(builder.build());
 
-		HttpResponse response;
 		try {
-			response = httpClient.execute(httpPost);
+			HttpResponse response = httpClient.execute(httpPost);
 			HttpEntity resEntity = response.getEntity();
 			String content = EntityUtils.toString(resEntity);
 			resEntity.consumeContent();
 			return new TextResult(content, data);
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return null;
 	}

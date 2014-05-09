@@ -17,8 +17,9 @@ public class ImagePoster implements TextResultClient {
 	private static final String HEIGHT_TAG = "seaice.app.sharesight.poster.ImagePoster.HEIGHT";
 	private static final String URL_TAG = "seaice.app.sharesight.poster.ImagePoster.URL";
 	private static final String DEVICE_ID_TAG = "seaice.app.sharesight.poster.ImagePoster.DEVICE_ID";
-	
+
 	private static final String IMAGE_POST_SERVER = "http://www.zhouhaibing.com/app/sharesight/postImage";
+	private static final String IMAGE_ADD_SERVER = "http://www.zhouhaibing.com/app/sharesight/addrecord";
 	private static final String IMAGE_PATH_SERVER = "http://www.zhouhaibing.com/static/file/app/sharesight";
 
 	private static final int POST_IMAGE = 1;
@@ -29,6 +30,7 @@ public class ImagePoster implements TextResultClient {
 	}
 
 	public void post(String filePath, int width, int height, String deviceId) {
+		mCallback.beforePostImage();
 		Bundle data = new Bundle();
 
 		// Needed by self...
@@ -42,7 +44,7 @@ public class ImagePoster implements TextResultClient {
 		data.putString(DEVICE_ID_TAG, deviceId);
 
 		ArrayList<String> fileKeyArray = new ArrayList<String>();
-		fileKeyArray.add("file");
+		fileKeyArray.add("userfile");
 		ArrayList<String> fileValueArray = new ArrayList<String>();
 		fileValueArray.add(filePath);
 
@@ -56,17 +58,24 @@ public class ImagePoster implements TextResultClient {
 
 	@Override
 	public void onGetTextResult(TextResult textResult) {
+		if (textResult == null) {
+			// There are some error happened
+			mCallback.onImagePosted(false, "FAIL");
+			mCallback.afterPostImage();
+			return;
+		}
 		Bundle data = textResult.getData();
 		if (data.getInt(TASK_TAG) == POST_IMAGE) {
 			data.putInt(TASK_TAG, POST_TEXT);
+			data.putString(TextTask.URL_TAG, IMAGE_ADD_SERVER);
 
 			// put the data needed by the TextTask object
 			ArrayList<String> keyArray = new ArrayList<String>();
 			ArrayList<String> valueArray = new ArrayList<String>();
 			keyArray.add("width");
-			valueArray.add(data.getString(WIDTH_TAG));
+			valueArray.add(data.getInt(WIDTH_TAG) + "");
 			keyArray.add("height");
-			valueArray.add(data.getString(HEIGHT_TAG));
+			valueArray.add(data.getInt(HEIGHT_TAG) + "");
 			keyArray.add("url");
 			valueArray.add(data.getString(URL_TAG));
 			keyArray.add("deviceId");
@@ -78,6 +87,7 @@ public class ImagePoster implements TextResultClient {
 			new TextTask(this).execute(data);
 		} else if (data.getInt(TASK_TAG) == POST_TEXT) {
 			mCallback.onImagePosted(true, "OK");
+			mCallback.afterPostImage();
 		}
 	}
 
