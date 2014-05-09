@@ -25,15 +25,16 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 
 	@Override
 	protected TextResult doInBackground(Bundle... params) {
-		Bundle param = params[0];
+		Bundle data = params[0];
+		String url = data.getString(mClient.getUrlTag());
 
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(mClient.getUrlTag());
+		HttpGet httpGet = new HttpGet(url);
 
 		try {
 			HttpResponse response = httpClient.execute(httpGet);
 			HttpEntity respEntity = response.getEntity();
-			return new TextResult(EntityUtils.toString(respEntity), param);
+			return new TextResult(EntityUtils.toString(respEntity), data);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

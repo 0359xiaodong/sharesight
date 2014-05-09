@@ -24,14 +24,16 @@ public class ImageTask extends AsyncTask<Bundle, Integer, ImageResult> {
 
 	@Override
 	protected ImageResult doInBackground(Bundle... args) {
-		Bundle param = args[0];
+		Bundle data = args[0];
+		String url = data.getString(mClient.getUrlTag());
+		
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(mClient.getUrlTag());
+		HttpGet httpGet = new HttpGet(url);
 
 		try {
 			HttpResponse response = httpClient.execute(httpGet);
 			return new ImageResult(BitmapFactory.decodeStream(response
-					.getEntity().getContent()), param);
+					.getEntity().getContent()), data);
 		} catch (IOException e) {
 
 		}
