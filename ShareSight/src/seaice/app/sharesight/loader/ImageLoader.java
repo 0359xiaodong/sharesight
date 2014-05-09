@@ -3,13 +3,14 @@ package seaice.app.sharesight.loader;
 import java.util.ArrayList;
 
 import seaice.app.sharesight.data.ImageMeta;
-import seaice.app.sharesight.data.ImageTask;
 import seaice.app.sharesight.http.BitmapTaskParam;
 import seaice.app.sharesight.http.BitmapTaskResult;
 import seaice.app.sharesight.http.HttpBitmapTask;
 import seaice.app.sharesight.http.HttpTextTask;
-import seaice.app.sharesight.http.HttpBitmapTask.HttpBitmapAsyncTaskClient;
-import seaice.app.sharesight.http.HttpTextTask.HttpTextTaskClient;
+import seaice.app.sharesight.http.HttpBitmapTaskClient;
+import seaice.app.sharesight.http.HttpTextTaskClient;
+import seaice.app.sharesight.http.TextTaskParam;
+import seaice.app.sharesight.http.TextTaskResult;
 import android.graphics.Bitmap;
 
 import com.google.gson.Gson;
@@ -23,8 +24,7 @@ import com.google.gson.JsonParser;
  * @author zhb
  * 
  */
-public class ImageLoader implements HttpTextTaskClient,
-		HttpBitmapAsyncTaskClient {
+public class ImageLoader implements HttpTextTaskClient, HttpBitmapTaskClient {
 
 	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getimage";
 
@@ -40,10 +40,10 @@ public class ImageLoader implements HttpTextTaskClient,
 	public void loadImageMetaList(int begin) {
 		mCallback.beforeLoadImageMeta();
 		String url = IMAGE_META_SERVER + "/" + begin;
-		new HttpTextTask(this).execute(url);
+		new HttpTextTask(this).execute(new TextTaskParam(url));
 	}
 
-	public void loadImage(ImageTask task) {
+	public void loadImage(ImageLoaderTask task) {
 		if (task == null) {
 			return;
 		}
@@ -56,14 +56,14 @@ public class ImageLoader implements HttpTextTaskClient,
 		}
 
 		mCallback.beforeLoadImageMeta();
-		new HttpBitmapTask(this).execute(new BitmapTaskParam(imageViewId,
-				url));
+		new HttpBitmapTask(this).execute(new BitmapTaskParam(imageViewId, url));
 	}
 
 	@Override
-	public void onGetTextTaskResult(String json) {
+	public void onGetTextTaskResult(TextTaskResult result) {
+		String json = result.getContent();
 		if (json == null) {
-			return ;
+			return;
 		}
 		ArrayList<ImageMeta> imageMetaList = new ArrayList<ImageMeta>();
 		JsonParser parser = new JsonParser();

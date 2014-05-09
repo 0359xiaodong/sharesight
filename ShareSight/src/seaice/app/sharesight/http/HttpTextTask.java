@@ -2,6 +2,7 @@ package seaice.app.sharesight.http;
 
 import java.io.IOException;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -10,7 +11,8 @@ import org.apache.http.util.EntityUtils;
 
 import android.os.AsyncTask;
 
-public class HttpTextTask extends AsyncTask<String, Integer, String> {
+public class HttpTextTask extends
+		AsyncTask<TextTaskParam, Integer, TextTaskResult> {
 
 	private HttpTextTaskClient mClient;
 
@@ -20,13 +22,17 @@ public class HttpTextTask extends AsyncTask<String, Integer, String> {
 	}
 
 	@Override
-	protected String doInBackground(String... args) {
+	protected TextTaskResult doInBackground(TextTaskParam... params) {
+		TextTaskParam param = params[0];
+
 		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(args[0]);
+		HttpGet httpGet = new HttpGet(param.getUrl());
 
 		try {
 			HttpResponse response = httpClient.execute(httpGet);
-			return EntityUtils.toString(response.getEntity());
+			HttpEntity respEntity = response.getEntity();
+			return new TextTaskResult(respEntity.getContentType(),
+					EntityUtils.toString(respEntity));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -34,13 +40,7 @@ public class HttpTextTask extends AsyncTask<String, Integer, String> {
 		return null;
 	}
 
-	protected void onPostExecute(String result) {
+	protected void onPostExecute(TextTaskResult result) {
 		mClient.onGetTextTaskResult(result);
-	}
-
-	public interface HttpTextTaskClient {
-
-		public void onGetTextTaskResult(String text);
-
 	}
 }

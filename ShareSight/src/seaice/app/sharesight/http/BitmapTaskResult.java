@@ -3,28 +3,28 @@ package seaice.app.sharesight.http;
 import android.graphics.Bitmap;
 
 public class BitmapTaskResult {
-	
-	private int mImageViewId;
 
-	private String mUrl;
-	
-	private Bitmap mBitmap;
-	
+	private int imageViewId;
+
+	private String url;
+
+	private Bitmap bitmap;
+
 	public BitmapTaskResult(int imageViewId, String url, Bitmap bitmap) {
-		mImageViewId = imageViewId;
-		mUrl = url;
-		mBitmap = bitmap;
+		this.imageViewId = imageViewId;
+		this.url = url;
+		this.bitmap = bitmap;
 	}
-	
+
 	public int getImageViewId() {
-		return mImageViewId;
+		return imageViewId;
 	}
-	
+
 	public String getUrl() {
-		return mUrl;
+		return url;
 	}
-	
+
 	public Bitmap getBitmap() {
-		return mBitmap;
+		return bitmap;
 	}
 }

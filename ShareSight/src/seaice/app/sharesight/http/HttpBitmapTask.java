@@ -13,9 +13,9 @@ import android.os.AsyncTask;
 public class HttpBitmapTask extends
 		AsyncTask<BitmapTaskParam, Integer, BitmapTaskResult> {
 
-	private HttpBitmapAsyncTaskClient mClient;
+	private HttpBitmapTaskClient mClient;
 
-	public HttpBitmapTask(HttpBitmapAsyncTaskClient client) {
+	public HttpBitmapTask(HttpBitmapTaskClient client) {
 		super();
 
 		mClient = client;
@@ -42,11 +42,5 @@ public class HttpBitmapTask extends
 
 	protected void onPostExecute(BitmapTaskResult bitmapResult) {
 		mClient.onGetBitmapTaskResult(bitmapResult);
-	}
-
-	public interface HttpBitmapAsyncTaskClient {
-
-		public void onGetBitmapTaskResult(BitmapTaskResult bitmapResult);
-
 	}
 }

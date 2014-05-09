@@ -11,9 +11,9 @@ import java.util.Queue;
 
 import seaice.app.sharesight.data.ColumnMeta;
 import seaice.app.sharesight.data.ImageMeta;
-import seaice.app.sharesight.data.ImageTask;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderCallback;
+import seaice.app.sharesight.loader.ImageLoaderTask;
 import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.views.MyScrollView;
 import seaice.app.sharesight.views.MyScrollView.ScrollViewListener;
@@ -70,7 +70,7 @@ public class MainActivity extends ActionBarActivity implements
 	private int mColumnCnt = 0;
 
 	/** Image Loader Variable */
-	private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
+	private Queue<ImageLoaderTask> mTaskQueue = new LinkedList<ImageLoaderTask>();
 	private String mImagePath;
 	private int mImageCount = 0;
 	private static final int IMAGE_COUNT_PER_PAGE = 10;
@@ -132,7 +132,7 @@ public class MainActivity extends ActionBarActivity implements
 	private void appendImageViewList(List<ImageMeta> imageMetaList) {
 		for (ImageMeta imageMeta : imageMetaList) {
 			int retId = appendImageView(imageMeta);
-			mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
+			mTaskQueue.add(new ImageLoaderTask(retId, imageMeta.getUrl()));
 		}
 	}
 
@@ -325,7 +325,7 @@ public class MainActivity extends ActionBarActivity implements
 		appendImageViewList(imageMetaList);
 
 		mImageCount += mTaskQueue.size();
-		ImageTask task = mTaskQueue.poll();
+		ImageLoaderTask task = mTaskQueue.poll();
 		mLoader.loadImage(task);
 	}
 
@@ -337,7 +337,7 @@ public class MainActivity extends ActionBarActivity implements
 		}
 
 		// Needs continue?
-		ImageTask task = mTaskQueue.poll();
+		ImageLoaderTask task = mTaskQueue.poll();
 		mLoader.loadImage(task);
 	}
 

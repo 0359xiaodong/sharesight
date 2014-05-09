@@ -2,45 +2,45 @@ package seaice.app.sharesight.data;
 
 public class ColumnMeta {
 
-	private int mHeight;
-	private int mLeftId;
-	private int mTopId;
-	private int mColumn;
+	private int height;
+	private int leftId;
+	private int topId;
+	private int column;
 
 	public int getHeight() {
-		return mHeight;
+		return height;
 	}
 
 	public int getLeftId() {
-		return mLeftId;
+		return leftId;
 	}
 
 	public int getTopId() {
-		return mTopId;
+		return topId;
 	}
 
 	public int getColumn() {
-		return mColumn;
+		return column;
 	}
 
 	public void addHeight(int height) {
-		this.mHeight += height;
+		this.height += height;
 	}
 	
 	public void setHeight(int height) {
-		this.mHeight = height;
+		this.height = height;
 	}
 
 	public void setLeftId(int leftId) {
-		this.mLeftId = leftId;
+		this.leftId = leftId;
 	}
 
 	public void setTopId(int topId) {
-		this.mTopId = topId;
+		this.topId = topId;
 	}
 
 	public void setColumn(int column) {
-		this.mColumn = column;
+		this.column = column;
 	}
 
 	public static final int PARENT_LEFT = -1;

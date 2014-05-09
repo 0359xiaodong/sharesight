@@ -1,12 +1,12 @@
-package seaice.app.sharesight.http;
+package seaice.app.sharesight.loader;
 
-public class BitmapTaskParam {
+public class ImageLoaderTask {
 
 	private int imageViewId;
 
 	private String url;
 
-	public BitmapTaskParam(int imageViewId, String url) {
+	public ImageLoaderTask(int imageViewId, String url) {
 		this.imageViewId = imageViewId;
 		this.url = url;
 	}
