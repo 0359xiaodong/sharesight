@@ -18,6 +18,8 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 
 	private TextResultClient mClient;
 
+	public static final String URL_TAG = "URL";
+
 	public TextTask(TextResultClient client) {
 		super();
 		mClient = client;
@@ -26,7 +28,8 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 	@Override
 	protected TextResult doInBackground(Bundle... params) {
 		Bundle data = params[0];
-		String url = data.getString(mClient.getUrlTag());
+
+		String url = data.getString(URL_TAG);
 
 		HttpClient httpClient = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);

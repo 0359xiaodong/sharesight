@@ -29,8 +29,6 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
 	private static final String RESOURCE_ID_TAG = "RESOURCE_ID";
 
-	private static final String URL_TAG = "url";
-
 	private ImageLoaderCallback mCallback;
 
 	private FileCache mFileCache;
@@ -44,7 +42,7 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		mCallback.beforeLoadImageMeta();
 		String url = IMAGE_META_SERVER + "/" + begin;
 		Bundle data = new Bundle();
-		data.putString(URL_TAG, url);
+		data.putString(TextTask.URL_TAG, url);
 		new TextTask(this).execute(data);
 	}
 
@@ -63,7 +61,7 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		mCallback.beforeLoadImageMeta();
 		Bundle data = new Bundle();
 		data.putInt(RESOURCE_ID_TAG, imageViewId);
-		data.putString(URL_TAG, url);
+		data.putString(ImageTask.URL_TAG, url);
 		new ImageTask(this).execute(data);
 	}
 
@@ -87,7 +85,7 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 	@Override
 	public void onGetImageResult(ImageResult imageResult) {
 		int imageViewId = imageResult.getData().getInt(RESOURCE_ID_TAG);
-		String url = imageResult.getData().getString(URL_TAG);
+		String url = imageResult.getData().getString(ImageTask.URL_TAG);
 		Bitmap bitmap = imageResult.getBitmap();
 		if (bitmap != null) {
 			// Here how to save it to cache
@@ -95,9 +93,4 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		}
 		mCallback.onImageLoaded(imageViewId, bitmap);
 	}
-
-	public String getUrlTag() {
-		return URL_TAG;
-	}
-
 }

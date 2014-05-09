@@ -78,7 +78,7 @@ public class AppUtils {
 		FileOutputStream out;
 		try {
 			out = new FileOutputStream(file);
-			bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
 			out.close();
 		} catch (Exception e) {
 			e.printStackTrace();

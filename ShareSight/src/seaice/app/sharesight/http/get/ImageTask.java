@@ -17,16 +17,19 @@ public class ImageTask extends AsyncTask<Bundle, Integer, ImageResult> {
 
 	private ImageResultClient mClient;
 
+	public static final String URL_TAG = "URL";
+
 	public ImageTask(ImageResultClient client) {
 		super();
 		mClient = client;
 	}
 
 	@Override
-	protected ImageResult doInBackground(Bundle... args) {
-		Bundle data = args[0];
-		String url = data.getString(mClient.getUrlTag());
+	protected ImageResult doInBackground(Bundle... params) {
+		Bundle data = params[0];
 		
+		String url = data.getString(data.getString(URL_TAG));
+
 		HttpClient httpClient = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);
 
