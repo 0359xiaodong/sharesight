@@ -20,7 +20,11 @@ public class ImagePoster implements TextResultClient {
 	private static final String DEVICE_ID_TAG = "seaice.app.sharesight.poster.ImagePoster.DEVICE_ID";
 
 	private static final String IMAGE_POST_SERVER = "http://www.zhouhaibing.com/app/sharesight/postImage";
-	private static final String IMAGE_ADD_SERVER = "http://www.zhouhaibing.com/app/sharesight/addrecord";
+	// private static final String IMAGE_POST_SERVER =
+	// "http://sharesight.duapp.com/index.php/app/addrecord";
+	// private static final String IMAGE_ADD_SERVER =
+	// "http://www.zhouhaibing.com/app/sharesight/addrecord";
+	private static final String IMAGE_ADD_SERVER = "http://sharesight.duapp.com/index.php/app/addrecord";
 	private static final String IMAGE_PATH_SERVER = "http://www.zhouhaibing.com/static/file/app/sharesight";
 
 	private static final int POST_IMAGE = 1;
