@@ -18,7 +18,7 @@ public class BCSWrapper {
 
 	private static final String SECRETE_KEY = "SECRETE_KEY";
 
-	private static final String BUCKET = "BUCKET_NAME";
+	private static final String BUCKET = "BUCKET";
 
 	private BaiduBCS mBaiduBCS;
 
