@@ -88,20 +88,37 @@ public class AppUtils {
 	}
 
 	public static String getRealPathFromUri(ContextWrapper contextWrapper,
-			Uri contentURI) {
-		String result;
-		Cursor cursor = contextWrapper.getContentResolver().query(contentURI,
-				null, null, null, null);
-		if (cursor == null) {
-			result = contentURI.getPath();
-		} else {
-			cursor.moveToFirst();
-			int idx = cursor
-					.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-			result = cursor.getString(idx);
-			cursor.close();
-		}
-		return result;
+			Uri uri) {
+		// String result;
+		// Cursor cursor = contextWrapper.getContentResolver().query(contentURI,
+		// null, null, null, null);
+		// if (cursor == null) {
+		// result = contentURI.getPath();
+		// } else {
+		// cursor.moveToFirst();
+		// int idx = cursor
+		// .getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+		// result = cursor.getString(idx);
+		// cursor.close();
+		// }
+		// return result;
+		Cursor cursor = contextWrapper.getContentResolver().query(uri, null,
+				null, null, null);
+		cursor.moveToFirst();
+		String document_id = cursor.getString(0);
+		document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+		cursor.close();
+
+		cursor = contextWrapper.getContentResolver().query(
+				android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+				null, MediaStore.Images.Media._ID + " = ? ",
+				new String[] { document_id }, null);
+		cursor.moveToFirst();
+		String path = cursor.getString(cursor
+				.getColumnIndex(MediaStore.Images.Media.DATA));
+		cursor.close();
+
+		return path;
 	}
 
 	public static File createTempImageFile(String cacheDirPath)
