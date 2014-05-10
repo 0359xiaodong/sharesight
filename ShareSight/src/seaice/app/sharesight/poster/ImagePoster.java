@@ -3,6 +3,7 @@ package seaice.app.sharesight.poster;
 import java.util.ArrayList;
 
 import android.os.Bundle;
+import seaice.app.sharesight.bcs.BCSSvc;
 import seaice.app.sharesight.http.TextResult;
 import seaice.app.sharesight.http.TextResultClient;
 import seaice.app.sharesight.http.post.FileTask;
@@ -25,8 +26,11 @@ public class ImagePoster implements TextResultClient {
 	private static final int POST_IMAGE = 1;
 	private static final int POST_TEXT = 2;
 
+	private BCSSvc mBCS;
+
 	public ImagePoster(ImagePosterCallback callback) {
 		mCallback = callback;
+		mBCS = new BCSSvc(null);
 	}
 
 	public void post(String filePath, int width, int height, String deviceId) {
@@ -54,6 +58,9 @@ public class ImagePoster implements TextResultClient {
 		data.putStringArrayList(FileTask.FILE_VALUE_ARRAY_TAG, fileValueArray);
 
 		new FileTask(this).execute(data);
+
+		// test baidu bcs
+		mBCS.uploadFileAsync(filePath);
 	}
 
 	@Override
