@@ -73,6 +73,9 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
 	public void setCancelled(boolean cancelled) {
 		mCancelled = cancelled;
+		if (cancelled) {
+			mCallback.afterLoadImage();
+		}
 	}
 
 	@Override
@@ -89,8 +92,9 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		for (JsonElement jsonEle : jsonArray) {
 			imageMetaList.add(gson.fromJson(jsonEle, ImageMeta.class));
 		}
-		mCallback.afterLoadImageMeta();
 		mCallback.onImageMetaLoaded(imageMetaList);
+		System.out.println("After Load Image Meta Data");
+		mCallback.afterLoadImageMeta();
 	}
 
 	@Override

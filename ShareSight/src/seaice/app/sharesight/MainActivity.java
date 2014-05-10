@@ -62,6 +62,8 @@ public class MainActivity extends ActionBarActivity implements
 
 	private boolean mLoading = false;
 
+	public static final String IMAGE_PATH_TAG = "IMAGE";
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -97,19 +99,23 @@ public class MainActivity extends ActionBarActivity implements
 		mProgressDialog.setOnCancelListener(new OnCancelListener() {
 			@Override
 			public void onCancel(DialogInterface dialog) {
-				mProgressDialog.dismiss();
 				mLoader.setCancelled(true);
 			}
 		});
 
 		mLoader = new ImageLoader(this);
 		mLoader.loadImageMetaList(mImageCount);
+
 	}
 
-	public void onStop() {
-		super.onStop();
+	@Override
+	public void onSaveInstanceState(Bundle instanceState) {
+		instanceState.putString(IMAGE_PATH_TAG, mImagePath);
+	}
 
-		mProgressDialog.dismiss();
+	@Override
+	public void onRestoreInstanceState(Bundle instanceState) {
+		mImagePath = instanceState.getString(IMAGE_PATH_TAG);
 	}
 
 	/**
@@ -203,8 +209,6 @@ public class MainActivity extends ActionBarActivity implements
 		}
 	}
 
-	public static final String IMAGE_PATH_TAG = "IMAGE";
-
 	@Override
 	public void onImageMetaLoaded(List<ImageMeta> imageMetaList) {
 		addImageViewList(imageMetaList);
@@ -233,7 +237,7 @@ public class MainActivity extends ActionBarActivity implements
 
 	@Override
 	public void beforeLoadImage() {
-		// LEAVE IT AS A STUB
+
 	}
 
 	@Override
@@ -244,6 +248,6 @@ public class MainActivity extends ActionBarActivity implements
 
 	@Override
 	public void afterLoadImage() {
-		// LEAVE IT AS A STUB
+
 	}
 }
