@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import seaice.app.sharesight.R;
 import seaice.app.sharesight.data.ColumnMeta;
 import seaice.app.sharesight.utils.AppUtils;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
@@ -31,6 +33,18 @@ public class ImageScrollView extends ScrollView {
 	public ImageScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
+		TypedArray typedArray = context.getTheme().obtainStyledAttributes(
+				attrs, R.styleable.ImageScrollView, 0, 0);
+
+		try {
+			mMarginH = typedArray
+					.getInt(R.styleable.ImageScrollView_marginH, 8);
+			mMarginV = typedArray
+					.getInt(R.styleable.ImageScrollView_marginV, 8);
+		} finally {
+			typedArray.recycle();
+		}
+
 		mContext = context;
 		mColumnMetaList = new ArrayList<ColumnMeta>();
 	}
@@ -45,6 +59,19 @@ public class ImageScrollView extends ScrollView {
 
 	public void setScrollViewListener(ScrollViewListenner scrollViewListener) {
 		this.scrollViewListenner = scrollViewListener;
+	}
+
+	/**
+	 * remove all the ImageViews
+	 */
+	public void removeAllImageViews() {
+		/* maybe this code will helpful for garbage collection */
+		for (int i = 0; i < mLayout.getChildCount(); ++i) {
+			ImageView imageView = (ImageView) mLayout.getChildAt(i);
+			imageView.setImageBitmap(null);
+		}
+		mLayout.removeAllViews();
+		mColumnMetaList.clear();
 	}
 
 	@Override
@@ -71,8 +98,9 @@ public class ImageScrollView extends ScrollView {
 	 * @return the id
 	 */
 	public int addImageView(int width, int height) {
-		if (mColumnMetaList == null) {
+		if (mColumnMetaList == null || mColumnMetaList.size() == 0) {
 			beforeAddImageView();
+			debug_print_params();
 		}
 		int id = AppUtils.generateViewId();
 		ImageView imageView = new ImageView(mContext);
@@ -132,13 +160,16 @@ public class ImageScrollView extends ScrollView {
 
 	private void beforeAddImageView() {
 		// add the relative layout child view, the only view
-		mLayout = new RelativeLayout(mContext);
-		FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
-				LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		addView(mLayout, layoutParams);
+		if (mLayout == null) {
+			mLayout = new RelativeLayout(mContext);
+			FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
+					LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			addView(mLayout, layoutParams);
+		}
 
-		int width = mLayout.getWidth();
-		int height = mLayout.getHeight();
+		int width = getWidth();
+		int height = getHeight();
+
 		// I try to use two columns when on mobile phone
 		// and three columns when on landscape view
 		int columnCnt = height > width ? 2 : 3;
@@ -153,6 +184,10 @@ public class ImageScrollView extends ScrollView {
 			columnMeta.setTopId(ColumnMeta.PARENT_TOP);
 			mColumnMetaList.add(columnMeta);
 		}
+	}
+
+	public void debug_print_params() {
+		System.out.println(mColumnWidth + " - " + mColumnMetaList.size());
 	}
 
 }

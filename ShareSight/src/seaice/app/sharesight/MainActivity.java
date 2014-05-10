@@ -2,14 +2,10 @@ package seaice.app.sharesight;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import seaice.app.sharesight.data.ColumnMeta;
 import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderCallback;
@@ -18,21 +14,20 @@ import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.views.ImageScrollView;
 import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
-import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 /**
@@ -49,10 +44,6 @@ public class MainActivity extends ActionBarActivity implements
 		ImageLoaderCallback {
 
 	/**
-	 * The container to hold all the ImageViews
-	 */
-	private RelativeLayout mLayout;
-	/**
 	 * While taking communication with server, show this dialog
 	 */
 	private ProgressDialog mProgressDialog;
@@ -60,13 +51,6 @@ public class MainActivity extends ActionBarActivity implements
 	 * The ScrollView container..
 	 */
 	private ImageScrollView mScrollView;
-
-	/** Layout Variable */
-	private ArrayList<ColumnMeta> mColumnMetaList = new ArrayList<ColumnMeta>();
-	private int mMarginH = 8;
-	private int mMarginV = 8;
-	private int mColumnWidth = 0;
-	private int mColumnCnt = 0;
 
 	/** Image Loader Variable */
 	private Queue<ImageLoaderTask> mTaskQueue = new LinkedList<ImageLoaderTask>();
@@ -83,11 +67,9 @@ public class MainActivity extends ActionBarActivity implements
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		mLayout = (RelativeLayout) findViewById(R.id.layout);
+		// set up the ImageScrollView
 		mScrollView = (ImageScrollView) findViewById(R.id.container);
-
 		mScrollView.setScrollViewListener(new ScrollViewListenner() {
-
 			@Override
 			public void onScrollChanged(ImageScrollView scrollView, int x,
 					int y, int oldx, int oldy) {
@@ -95,7 +77,7 @@ public class MainActivity extends ActionBarActivity implements
 						.getChildCount() - 1);
 				int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
 						.getScrollY()));
-
+				/* If we reach the bottom and is not loading currently */
 				if (diff == 0 && !mLoading) {
 					mLoading = true;
 
@@ -104,13 +86,21 @@ public class MainActivity extends ActionBarActivity implements
 					}
 				}
 			}
-
 		});
 
+		// set up the progress dialog action
 		mProgressDialog = new ProgressDialog(this,
 				ProgressDialog.STYLE_HORIZONTAL);
 		mProgressDialog.setMessage("Loading...");
-		prepareLayoutArguments();
+		mProgressDialog.setCancelable(true);
+		mProgressDialog.setCanceledOnTouchOutside(false);
+		mProgressDialog.setOnCancelListener(new OnCancelListener() {
+			@Override
+			public void onCancel(DialogInterface dialog) {
+				mProgressDialog.dismiss();
+				mLoader.setCancelled(true);
+			}
+		});
 
 		mLoader = new ImageLoader(this);
 		mLoader.loadImageMetaList(mImageCount);
@@ -128,108 +118,17 @@ public class MainActivity extends ActionBarActivity implements
 	 * 
 	 * @param imageMetaList
 	 */
-	private void appendImageViewList(List<ImageMeta> imageMetaList) {
+	private void addImageViewList(List<ImageMeta> imageMetaList) {
 		for (ImageMeta imageMeta : imageMetaList) {
-			int retId = appendImageView(imageMeta);
+			int retId = mScrollView.addImageView(imageMeta.getWidth(),
+					imageMeta.getHeight());
 			mTaskQueue.add(new ImageLoaderTask(retId, imageMeta.getUrl()));
 		}
 	}
 
-	/**
-	 * Here is the core algorithm to decide how to place each Image.
-	 * 
-	 * @param imageMeta
-	 */
-	private int appendImageView(ImageMeta imageMeta) {
-		// assign a new id for this ImageView
-		int id = AppUtils.generateViewId();
-		ImageView imageView = new ImageView(this);
-		int realWidth = mColumnWidth;
-		int realHeight = imageMeta.getHeight() * realWidth
-				/ imageMeta.getWidth();
-		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-				realWidth, realHeight);
-		// sort the mColumnRecords
-		Collections.sort(mColumnMetaList, new Comparator<ColumnMeta>() {
-			@Override
-			public int compare(ColumnMeta lhs, ColumnMeta rhs) {
-				if (lhs.getHeight() < rhs.getHeight()) {
-					return -1;
-				} else {
-					return 1;
-				}
-			}
-		});
-		ColumnMeta above = mColumnMetaList.get(0);
-		above.addHeight(realHeight);
-		// find its upper view
-		if (above.getTopId() == ColumnMeta.PARENT_TOP) {
-			params.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-			params.topMargin = mMarginV; // top margin
-			params.bottomMargin = mMarginV; // bottom margin
-		} else {
-			params.addRule(RelativeLayout.BELOW, above.getTopId());
-			params.topMargin = 0; // top margin
-			params.bottomMargin = mMarginV; // bottom margin
-		}
-		above.setTopId(id);
-		// find its left view
-		if (above.getLeftId() == ColumnMeta.PARENT_LEFT) {
-			params.addRule(RelativeLayout.ALIGN_PARENT_LEFT,
-					RelativeLayout.TRUE);
-			params.leftMargin = mMarginH;
-			params.rightMargin = mMarginH;
-		} else {
-			params.addRule(RelativeLayout.RIGHT_OF, above.getLeftId());
-			params.leftMargin = 0;
-			params.rightMargin = mMarginH;
-		}
-
-		// set the leftId of the right column of current
-		for (ColumnMeta record : mColumnMetaList) {
-			if (record.getColumn() == (above.getColumn() + 1)) {
-				record.setLeftId(id);
-				break;
-			}
-		}
-
-		imageView.setId(id);
-		imageView.setBackgroundColor(Color.GRAY);
-		mLayout.addView(imageView, params);
-
-		return id;
-	}
-
-	/**
-	 * decide <b><code>mColumnCnt</code></b>, <b><code>mColumnWidth</code></b>,
-	 * <b><code>mColumnRecord</code></b>
-	 */
-	private void prepareLayoutArguments() {
-		DisplayMetrics metrics = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		int width = metrics.widthPixels;
-		int height = metrics.heightPixels;
-		// I try to use two columns when on mobile phone
-		// and three columns when on landscape view
-		mColumnCnt = height > width ? 2 : 3;
-		mColumnWidth = (width - (mColumnCnt + 1) * mMarginH) / mColumnCnt;
-		for (int i = 1; i <= mColumnCnt; ++i) {
-			ColumnMeta columnMeta = new ColumnMeta();
-			columnMeta.setHeight(0);
-			columnMeta.setColumn(i);
-			columnMeta.setLeftId(i == 1 ? ColumnMeta.PARENT_LEFT
-					: ColumnMeta.INVALID_LEFT);
-			// the first row is all below parent top
-			columnMeta.setTopId(ColumnMeta.PARENT_TOP);
-			mColumnMetaList.add(columnMeta);
-		}
-	}
-
 	private void refresh() {
-		mLayout.removeAllViews();
 		mImageCount = 0;
-		mColumnMetaList.clear();
-		prepareLayoutArguments();
+		mScrollView.removeAllImageViews();
 
 		mLoader.loadImageMetaList(mImageCount);
 	}
@@ -308,7 +207,7 @@ public class MainActivity extends ActionBarActivity implements
 
 	@Override
 	public void onImageMetaLoaded(List<ImageMeta> imageMetaList) {
-		appendImageViewList(imageMetaList);
+		addImageViewList(imageMetaList);
 
 		mImageCount += mTaskQueue.size();
 		ImageLoaderTask task = mTaskQueue.poll();

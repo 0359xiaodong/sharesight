@@ -33,12 +33,15 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
 	private FileCache mFileCache;
 
+	private boolean mCancelled = false;
+
 	public ImageLoader(ImageLoaderCallback callback) {
 		mCallback = callback;
 		mFileCache = new FileCache();
 	}
 
 	public void loadImageMetaList(int begin) {
+		mCancelled = false;
 		mCallback.beforeLoadImageMeta();
 		String url = IMAGE_META_SERVER + "/" + begin;
 		Bundle data = new Bundle();
@@ -47,6 +50,9 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 	}
 
 	public void loadImage(ImageLoaderTask task) {
+		if (mCancelled) {
+			return;
+		}
 		if (task == null) {
 			return;
 		}
@@ -63,6 +69,10 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		data.putInt(RESOURCE_ID_TAG, imageViewId);
 		data.putString(ImageTask.URL_TAG, url);
 		new ImageTask(this).execute(data);
+	}
+
+	public void setCancelled(boolean cancelled) {
+		mCancelled = cancelled;
 	}
 
 	@Override

@@ -1,14 +1,13 @@
-<seaice.app.sharesight.views.ImageScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:myapp="http://schemas.android.com/apk/res/seaice.app.sharesight"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="seaice.app.sharesight.MainActivity" >
+    android:layout_height="match_parent" >
 
-    <RelativeLayout
-        android:id="@+id/layout"
+    <seaice.app.sharesight.views.ImageScrollView
+        android:id="@+id/container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-    </RelativeLayout>
+        android:layout_height="match_parent"
+        myapp:marginH="8"
+        myapp:marginV="8" />
 
-</seaice.app.sharesight.views.ImageScrollView>
+</LinearLayout>
