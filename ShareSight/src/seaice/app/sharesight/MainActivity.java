@@ -15,8 +15,8 @@ import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderCallback;
 import seaice.app.sharesight.loader.ImageLoaderTask;
 import seaice.app.sharesight.utils.AppUtils;
-import seaice.app.sharesight.views.MyScrollView;
-import seaice.app.sharesight.views.MyScrollView.ScrollViewListener;
+import seaice.app.sharesight.views.ImageScrollView;
+import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -26,7 +26,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
-import android.text.format.Time;
 import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -60,7 +59,7 @@ public class MainActivity extends ActionBarActivity implements
 	/**
 	 * The ScrollView container..
 	 */
-	private MyScrollView mScrollView;
+	private ImageScrollView mScrollView;
 
 	/** Layout Variable */
 	private ArrayList<ColumnMeta> mColumnMetaList = new ArrayList<ColumnMeta>();
@@ -85,13 +84,13 @@ public class MainActivity extends ActionBarActivity implements
 		setContentView(R.layout.activity_main);
 
 		mLayout = (RelativeLayout) findViewById(R.id.layout);
-		mScrollView = (MyScrollView) findViewById(R.id.container);
+		mScrollView = (ImageScrollView) findViewById(R.id.container);
 
-		mScrollView.setScrollViewListener(new ScrollViewListener() {
+		mScrollView.setScrollViewListener(new ScrollViewListenner() {
 
 			@Override
-			public void onScrollChanged(MyScrollView scrollView, int x, int y,
-					int oldx, int oldy) {
+			public void onScrollChanged(ImageScrollView scrollView, int x,
+					int y, int oldx, int oldy) {
 				View view = (View) scrollView.getChildAt(scrollView
 						.getChildCount() - 1);
 				int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
@@ -252,7 +251,8 @@ public class MainActivity extends ActionBarActivity implements
 			if (cameraIntent.resolveActivity(getPackageManager()) != null) {
 				File imageFile = null;
 				try {
-					imageFile = createImageFile();
+					imageFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH);
+					mImagePath = imageFile.getAbsolutePath();
 				} catch (IOException e) {
 					// OMMIT THIS EXCEPTION
 				}
@@ -283,20 +283,6 @@ public class MainActivity extends ActionBarActivity implements
 		inflater.inflate(R.menu.main, menu);
 		return super.onCreateOptionsMenu(menu);
 
-	}
-
-	private File createImageFile() throws IOException {
-		Time today = new Time(Time.getCurrentTimezone());
-		today.setToNow();
-		String imageFileName = today.format2445();
-		File imgCacheDir = new File(IMAGE_CACHE_PATH);
-		// If the folder does not exist, then create it..
-		if (!imgCacheDir.exists()) {
-			imgCacheDir.mkdirs();
-		}
-		File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
-		mImagePath = image.getAbsolutePath();
-		return image;
 	}
 
 	@Override

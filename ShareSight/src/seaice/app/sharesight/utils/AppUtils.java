@@ -13,6 +13,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.text.format.Time;
 
 public class AppUtils {
 
@@ -101,5 +102,19 @@ public class AppUtils {
 			cursor.close();
 		}
 		return result;
+	}
+
+	public static File createTempImageFile(String cacheDirPath)
+			throws IOException {
+		Time today = new Time(Time.getCurrentTimezone());
+		today.setToNow();
+		String imageFileName = today.format2445();
+		File imgCacheDir = new File(cacheDirPath);
+		// If the folder does not exist, then create it..
+		if (!imgCacheDir.exists()) {
+			imgCacheDir.mkdirs();
+		}
+		File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
+		return image;
 	}
 }
