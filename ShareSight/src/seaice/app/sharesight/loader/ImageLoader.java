@@ -25,7 +25,7 @@ import com.google.gson.JsonParser;
  */
 public class ImageLoader implements TextResultClient, ImageResultClient {
 
-	private static final String IMAGE_META_SERVER = "http://www.zhouhaibing.com/app/sharesight/getimage";
+	private static final String IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/getimage";
 
 	private static final String RESOURCE_ID_TAG = "RESOURCE_ID";
 

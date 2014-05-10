@@ -38,7 +38,6 @@ public class UploadActivity extends Activity implements ImagePosterCallback {
 				ProgressDialog.STYLE_HORIZONTAL);
 
 		mImagePath = getIntent().getStringExtra(MainActivity.IMAGE_PATH_TAG);
-		Toast.makeText(this, mImagePath, Toast.LENGTH_LONG).show();
 		mImgView = (ImageView) findViewById(R.id.confirmImage);
 
 		mPoster = new ImagePoster(this);

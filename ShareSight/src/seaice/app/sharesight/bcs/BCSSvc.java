@@ -2,6 +2,12 @@ package seaice.app.sharesight.bcs;
 
 import java.io.File;
 
+import com.baidu.inf.iis.bcs.model.DownloadObject;
+import com.baidu.inf.iis.bcs.model.ObjectMetadata;
+import com.baidu.inf.iis.bcs.response.BaiduBCSResponse;
+
+import android.os.Bundle;
+
 public class BCSSvc {
 
 	private BCSWrapper mWrapper;
@@ -13,40 +19,50 @@ public class BCSSvc {
 		mClient = client == null ? new NullBCSSvcClient() : client;
 	}
 
-	public void uploadFileAsync(final String filePath) {
+	public void uploadFileAsync(final String filePath, final Bundle outData) {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				uploadFile(filePath);
+				uploadFile(filePath, outData);
 			}
 		}).start();
 	}
 
-	public boolean uploadFile(String filePath) {
+	public ObjectMetadata uploadFile(String filePath, Bundle clientData) {
 		String fileName = filePath.substring(filePath.lastIndexOf("/"));
 		String object = "/" + fileName;
-		mWrapper.putObject(object, new File(filePath));
+		BaiduBCSResponse<ObjectMetadata> response = mWrapper.putObject(object,
+				new File(filePath));
+		ObjectMetadata result = response.getResult();
 		if (mClient != null) {
+			clientData.putString(URL_TAG, mWrapper.generateUrl(object));
+			mClient.onFileUploaded(result, clientData);
 		}
-		return true;
+		return result;
 	}
 
-	public void downloadToFileAsync(final String fileName, final String destDir) {
+	public void downloadToFileAsync(final String fileName,
+			final String destDir, final Bundle clientData) {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				downloadToFile(fileName, destDir);
+				downloadToFile(fileName, destDir, clientData);
 			}
 		}).start();
 	}
 
-	public void downloadToFile(String fileName, String destDir) {
+	public DownloadObject downloadToFile(String fileName, String destDir,
+			Bundle clientData) {
 		File destFile = new File(destDir + "/" + fileName);
 		String object = "/" + fileName;
-		mWrapper.getObject(object, destFile);
+		BaiduBCSResponse<DownloadObject> response = mWrapper.getObject(object,
+				destFile);
+		DownloadObject result = response.getResult();
 		if (mClient != null) {
-			
+			mClient.onFileDownloaded(result, clientData);
 		}
+		return result;
 	}
 
+	public static final String URL_TAG = "seaice.app.sharesight.bcs.BCSSvc";
 }
