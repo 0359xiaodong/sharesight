@@ -96,7 +96,6 @@ public class ImageScrollView extends ScrollView {
     public int addImageView(int width, int height) {
         if (mColumnMetaList == null || mColumnMetaList.size() == 0) {
             beforeAddImageView();
-            debug_print_params();
         }
         int id = AppUtils.generateViewId();
         ImageView imageView = new ImageView(mContext);
@@ -190,10 +189,6 @@ public class ImageScrollView extends ScrollView {
             columnMeta.setTopId(ColumnMeta.PARENT_TOP);
             mColumnMetaList.add(columnMeta);
         }
-    }
-
-    public void debug_print_params() {
-        System.out.println(mColumnWidth + " - " + mColumnMetaList.size());
     }
 
     public interface ScrollViewListenner {

@@ -4,9 +4,9 @@
     tools:context="seaice.app.sharesight.ViewActivity" >
 
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never"/>
+        android:id="@+id/action_vote"
+        android:icon="@drawable/ic_action_good"
+        android:title="@string/action_good"
+        app:showAsAction="always"/>
 
 </menu>

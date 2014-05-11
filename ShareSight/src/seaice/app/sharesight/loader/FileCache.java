@@ -24,14 +24,20 @@ public class FileCache {
 
     private int mCacheCount;
 
+    private static final int MAX_FILE_COUNT = 100;
+
     public FileCache() {
         File mCacheDir = new File(IMAGE_CACHE_PATH);
         if (!mCacheDir.exists()) {
             mCacheDir.mkdirs();
         }
+        mCacheCount = mCacheDir.listFiles().length;
     }
 
     public void addToCache(String url, Bitmap bitmap) {
+        if (mCacheCount >= MAX_FILE_COUNT) {
+            clear();
+        }
         File file = new File(IMAGE_CACHE_PATH + "/" + url.hashCode());
         if (file.exists()) {
             return;
@@ -50,7 +56,7 @@ public class FileCache {
     public Bitmap getBitmapFromCache(String url) {
         File file = new File(IMAGE_CACHE_PATH + "/" + url.hashCode());
         if (file.exists()) {
-            return AppUtils.decodeFile(file);
+            return AppUtils.decodeFileWithoutScale(file);
         } else {
             return null;
         }

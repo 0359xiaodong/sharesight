@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
+import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -68,6 +69,8 @@ public class MainActivity extends ActionBarActivity implements
     public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.MainActivity.IMAGE_VIEW_ID";
 
     private ArrayList<ImageMeta> mMetaList;
+
+    private String mDeviceId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +117,9 @@ public class MainActivity extends ActionBarActivity implements
         // set up the progress dialog action
         mProgressDialog = new ProgressDialog(this,
                 ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setMessage("Loading...");
+        mProgressDialog.setMessage(getResources().getText(
+                R.string.action_loading)
+                + "...");
         mProgressDialog.setCancelable(true);
         mProgressDialog.setCanceledOnTouchOutside(false);
         mProgressDialog.setOnCancelListener(new OnCancelListener() {
@@ -123,6 +128,9 @@ public class MainActivity extends ActionBarActivity implements
                 mLoader.setCancelled(true);
             }
         });
+
+        TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        mDeviceId = tm.getDeviceId();
 
         mLoader = new ImageLoader(this);
         mLoader.loadImageMetaList(mPageCount, IMAGE_COUNT_PER_PAGE, null);
@@ -176,20 +184,22 @@ public class MainActivity extends ActionBarActivity implements
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_camera_capture) {
+        if (id == R.id.action_camera_capture) {
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (cameraIntent.resolveActivity(getPackageManager()) != null) {
                 File imageFile = null;
                 try {
-                    imageFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH);
+                    imageFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH,
+                            mDeviceId);
                     mImagePath = imageFile.getAbsolutePath();
                 } catch (IOException e) {
                     // OMMIT THIS EXCEPTION
                 }
                 if (imageFile == null) {
-                    Toast.makeText(this, "SD card not found...",
+                    Toast.makeText(
+                            this,
+                            getResources().getText(
+                                    R.string.action_sdcard_notfound),
                             Toast.LENGTH_LONG).show();
                     return true;
                 }
@@ -204,6 +214,9 @@ public class MainActivity extends ActionBarActivity implements
             startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
         } else if (id == R.id.action_refresh) {
             refresh();
+        } else if (id == R.id.action_exit) {
+            // exit this activity, also means exit the application
+            finish();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -222,17 +235,34 @@ public class MainActivity extends ActionBarActivity implements
         // when the camera activity returns, we need to let the user confirm
         // this image, then upload
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            // start the upload activity
+            // the file need to be in cache, it is now already in cache, but is
+            // not scaled
+            AppUtils.decodeAndSave(mImagePath, mImagePath, this);
             Intent uploadActivity = new Intent(this, UploadActivity.class);
             uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
             startActivity(uploadActivity);
         } else if (requestCode == REQUEST_IMAGE_SELECT
                 && resultCode == RESULT_OK) {
             Uri selected = data.getData();
-            Intent uploadActivity = new Intent(this, UploadActivity.class);
-            uploadActivity.putExtra(IMAGE_PATH_TAG,
-                    AppUtils.getRealPathFromUri(this, selected));
-            startActivity(uploadActivity);
+            try {
+                // create the temp file
+                File cacheFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH,
+                        mDeviceId);
+                mImagePath = cacheFile.getAbsolutePath();
+                // move the selected file into cache folder
+                AppUtils.decodeAndSave(
+                        AppUtils.getRealPathFromUri(this, selected),
+                        mImagePath, this);
+                Intent uploadActivity = new Intent(this, UploadActivity.class);
+                uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
+                startActivity(uploadActivity);
+            } catch (IOException e) {
+                Toast.makeText(
+                        this,
+                        getResources().getText(R.string.action_sdcard_notfound),
+                        Toast.LENGTH_LONG).show();
+            }
+
         }
     }
 

@@ -1,16 +1,17 @@
 package seaice.app.sharesight.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.text.format.Time;
@@ -37,71 +38,70 @@ public class AppUtils {
         }
     }
 
-    public static Bitmap decodeFile(File file) {
-        try {
-            // decode image size
-            BitmapFactory.Options o = new BitmapFactory.Options();
-            o.inJustDecodeBounds = true;
-            FileInputStream stream1 = new FileInputStream(file);
-            BitmapFactory.decodeStream(stream1, null, o);
-            stream1.close();
-            // Find the correct scale value. It should be the power of 2.
-            final int REQUIRED_SIZE = 70;
-            int width_tmp = o.outWidth, height_tmp = o.outHeight;
-            int scale = 1;
-            while (true) {
-                if (width_tmp / 2 < REQUIRED_SIZE
-                        || height_tmp / 2 < REQUIRED_SIZE)
-                    break;
-                width_tmp /= 2;
-                height_tmp /= 2;
-                scale *= 2;
-            }
-            if (scale >= 2) {
-                scale /= 2;
-            }
-            // decode with inSampleSize
-            BitmapFactory.Options o2 = new BitmapFactory.Options();
-            o2.inSampleSize = scale;
-            FileInputStream stream2 = new FileInputStream(file);
-            Bitmap bitmap = BitmapFactory.decodeStream(stream2, null, o2);
-            stream2.close();
-            return bitmap;
-        } catch (FileNotFoundException e) {
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static Bitmap decodeFile(String filePath, Context context) {
+        // On my xiaomi 2s, its value is 720, but its size is also really big.. 700k
+        int desiredWidth = context.getResources().getDisplayMetrics().widthPixels;
+        // int desiredWidth = 360;
+
+        // Get the source image's dimensions
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(filePath, options);
+
+        int srcWidth = options.outWidth;
+        // Only scale if the source is big enough. This code is just trying to
+        // fit a image into a certain width.
+        if (desiredWidth > srcWidth)
+            desiredWidth = srcWidth;
+
+        // Calculate the correct inSampleSize/scale value. This helps reduce
+        // memory use. It should be a power of 2
+        // from:
+        // http://stackoverflow.com/questions/477572/android-strange-out-of-memory-issue/823966#823966
+        int inSampleSize = 1;
+        while (srcWidth / 2 > desiredWidth) {
+            srcWidth /= 2;
+            inSampleSize *= 2;
         }
-        return null;
+
+        float desiredScale = (float) desiredWidth / srcWidth;
+
+        // Decode with inSampleSize
+        options.inJustDecodeBounds = false;
+        options.inDither = false;
+        options.inSampleSize = inSampleSize;
+        options.inScaled = false;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap sampledSrcBitmap = BitmapFactory.decodeFile(filePath, options);
+
+        // Resize
+        Matrix matrix = new Matrix();
+        matrix.postScale(desiredScale, desiredScale);
+        Bitmap scaledBitmap = Bitmap.createBitmap(sampledSrcBitmap, 0, 0,
+                sampledSrcBitmap.getWidth(), sampledSrcBitmap.getHeight(),
+                matrix, true);
+        sampledSrcBitmap = null;
+
+        return scaledBitmap;
     }
 
-    public static File saveBitmapToFile(Bitmap bitmap, String name) {
-        File file = new File(name);
-        FileOutputStream out;
+    public static void saveBitmapToFile(Bitmap bitmap, String filePath) {
         try {
-            out = new FileOutputStream(file);
+            FileOutputStream out = new FileOutputStream(filePath);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            bitmap = null;
+        } catch (FileNotFoundException e) {
+            // error happened
         }
-        return file;
+    }
+
+    public static Bitmap decodeFileWithoutScale(File file)
+            throws OutOfMemoryError {
+        return BitmapFactory.decodeFile(file.getAbsolutePath());
     }
 
     public static String getRealPathFromUri(ContextWrapper contextWrapper,
             Uri uri) {
-        // String result;
-        // Cursor cursor = contextWrapper.getContentResolver().query(contentURI,
-        // null, null, null, null);
-        // if (cursor == null) {
-        // result = contentURI.getPath();
-        // } else {
-        // cursor.moveToFirst();
-        // int idx = cursor
-        // .getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-        // result = cursor.getString(idx);
-        // cursor.close();
-        // }
-        // return result;
         Cursor cursor = contextWrapper.getContentResolver().query(uri, null,
                 null, null, null);
         cursor.moveToFirst();
@@ -121,11 +121,11 @@ public class AppUtils {
         return path;
     }
 
-    public static File createTempImageFile(String cacheDirPath)
+    public static File createTempImageFile(String cacheDirPath, String deviceId)
             throws IOException {
         Time today = new Time(Time.getCurrentTimezone());
         today.setToNow();
-        String imageFileName = today.format2445();
+        String imageFileName = deviceId + "-" + today.format2445();
         File imgCacheDir = new File(cacheDirPath);
         // If the folder does not exist, then create it..
         if (!imgCacheDir.exists()) {
@@ -133,5 +133,10 @@ public class AppUtils {
         }
         File image = File.createTempFile(imageFileName, ".jpg", imgCacheDir);
         return image;
+    }
+
+    public static void decodeAndSave(String bigFilePath, String scaledFilePath,
+            Context context) {
+        saveBitmapToFile(decodeFile(bigFilePath, context), scaledFilePath);
     }
 }

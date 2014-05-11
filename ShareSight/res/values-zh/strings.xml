@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ShareSight</string>
+    <string name="action_settings">设置</string>
+    <string name="action_camera">照片</string>
+    <string name="action_camera_select">选择文件</string>
+    <string name="action_camera_capture">拍照</string>
+    <string name="action_exit">退出</string>
+    <string name="action_refresh">刷新</string>
+    <string name="title_activity_upload">上传</string>
+    <string name="action_upload">确认</string>
+    <string name="action_uploading">正在上传中</string>
+    <string name="action_loading">努力加载中</string>
+    <string name="action_cancel">取消</string>
+    <string name="img_upload_desc">上传照片描述</string>
+    <string name="title_activity_view">查看</string>
+    <string name="image_item_desc">单张照片描述</string>
+    <string name="action_good">赞</string>
+    <string name="action_good_toast">已赞</string>
+    <string name="action_sdcard_notfound">SD卡未找到</string>
+
+</resources>

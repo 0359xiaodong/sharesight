@@ -7,29 +7,8 @@
     <ImageView
         android:id="@+id/confirmImage"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:contentDescription="@string/img_upload_desc" />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <Button
-            android:id="@+id/cancel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:onClick="cancel"
-            android:text="@string/action_cancel" />
-
-        <Button
-            android:id="@+id/confirm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:onClick="upload"
-            android:text="@string/action_upload" />
-    </RelativeLayout>
+        android:layout_height="match_parent"
+        android:contentDescription="@string/img_upload_desc"
+        android:scaleType="fitCenter" />
 
 </LinearLayout>

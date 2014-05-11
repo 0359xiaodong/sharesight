@@ -101,7 +101,6 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
             imageMetaList.add(gson.fromJson(jsonEle, ImageMeta.class));
         }
         mCallback.onImageMetaLoaded(imageMetaList, result.getData());
-        System.out.println("After Load Image Meta Data");
         mCallback.afterLoadImageMeta();
     }
 
