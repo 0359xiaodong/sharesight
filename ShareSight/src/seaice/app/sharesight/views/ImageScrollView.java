@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -29,6 +30,8 @@ public class ImageScrollView extends ScrollView {
 	private int mColumnWidth = 0;
 
 	private RelativeLayout mLayout;
+
+	private ImageViewClickListener mListener;
 
 	public ImageScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -49,6 +52,10 @@ public class ImageScrollView extends ScrollView {
 		mColumnMetaList = new ArrayList<ColumnMeta>();
 	}
 
+	public void setImageViewClickListener(ImageViewClickListener listener) {
+		mListener = listener;
+	}
+
 	public void setHorizontalMarin(int margin) {
 		mMarginH = margin;
 	}
@@ -65,7 +72,11 @@ public class ImageScrollView extends ScrollView {
 	 * remove all the ImageViews
 	 */
 	public void removeAllImageViews() {
-		/* maybe this code will helpful for garbage collection */
+		/** if the layout is never created */
+		if (mLayout == null) {
+			return;
+		}
+
 		for (int i = 0; i < mLayout.getChildCount(); ++i) {
 			ImageView imageView = (ImageView) mLayout.getChildAt(i);
 			imageView.setImageBitmap(null);
@@ -82,21 +93,6 @@ public class ImageScrollView extends ScrollView {
 		}
 	}
 
-	public interface ScrollViewListenner {
-
-		void onScrollChanged(ImageScrollView scrollView, int x, int y,
-				int oldx, int oldy);
-	}
-
-	/**
-	 * add a new image view...
-	 * 
-	 * @param width
-	 *            the target width
-	 * @param height
-	 *            the target height
-	 * @return the id
-	 */
 	public int addImageView(int width, int height) {
 		if (mColumnMetaList == null || mColumnMetaList.size() == 0) {
 			beforeAddImageView();
@@ -154,6 +150,16 @@ public class ImageScrollView extends ScrollView {
 		imageView.setId(id);
 		imageView.setBackgroundColor(Color.GRAY);
 		mLayout.addView(imageView, params);
+		final int index = mLayout.getChildCount() - 1;
+		if (mListener != null) {
+			imageView.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					ImageView view = (ImageView) v;
+					mListener.onImageViewClicked(view, index);
+				}
+			});
+		}
 
 		return id;
 	}
@@ -190,4 +196,15 @@ public class ImageScrollView extends ScrollView {
 		System.out.println(mColumnWidth + " - " + mColumnMetaList.size());
 	}
 
+	public interface ScrollViewListenner {
+
+		void onScrollChanged(ImageScrollView scrollView, int x, int y,
+				int oldx, int oldy);
+	}
+
+	public interface ImageViewClickListener {
+
+		void onImageViewClicked(ImageView imageView, int index);
+
+	}
 }

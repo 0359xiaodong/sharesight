@@ -14,5 +14,6 @@
     <string name="action_cancel">Cancel</string>
     <string name="img_upload_desc">Confirm Upload this Image</string>
     <string name="title_activity_view">ViewActivity</string>
+    <string name="image_item_desc">Image Item</string>
 
 </resources>

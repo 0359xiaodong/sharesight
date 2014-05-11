@@ -25,9 +25,7 @@ import com.google.gson.JsonParser;
  */
 public class ImageLoader implements TextResultClient, ImageResultClient {
 
-	private static final String IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/getimage";
-
-	private static final String RESOURCE_ID_TAG = "RESOURCE_ID";
+	private static final String IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/listimage";
 
 	private ImageLoaderCallback mCallback;
 
@@ -40,34 +38,44 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		mFileCache = new FileCache();
 	}
 
-	public void loadImageMetaList(int begin) {
+	public ImageLoader() {
+		this(new ImageLoaderAdapter());
+	}
+
+	public void setImageLoaderCallback(ImageLoaderCallback callback) {
+		mCallback = callback;
+	}
+
+	public void loadImageMetaList(int page, int count, Bundle extras) {
 		mCancelled = false;
 		mCallback.beforeLoadImageMeta();
-		String url = IMAGE_META_SERVER + "/" + begin;
+		String url = IMAGE_META_SERVER + "/" + page + "/" + count;
 		Bundle data = new Bundle();
 		data.putString(TextTask.URL_TAG, url);
+		if (extras != null) {
+			data.putAll(extras);
+		}
 		new TextTask(this).execute(data);
 	}
 
-	public void loadImage(ImageLoaderTask task) {
+	public void loadImage(String url, Bundle extras) {
 		if (mCancelled) {
 			return;
 		}
-		if (task == null) {
+		if (url == null) {
 			return;
 		}
-		String url = task.getUrl();
-		int imageViewId = task.getImageViewId();
 		Bitmap bitmap = mFileCache.getBitmapFromCache(url);
 		if (bitmap != null) {
-			mCallback.onImageLoaded(task.getImageViewId(), bitmap);
+			mCallback.onImageLoaded(bitmap, extras);
 			return;
 		}
-
 		mCallback.beforeLoadImageMeta();
 		Bundle data = new Bundle();
-		data.putInt(RESOURCE_ID_TAG, imageViewId);
 		data.putString(ImageTask.URL_TAG, url);
+		if (extras != null) {
+			data.putAll(extras);
+		}
 		new ImageTask(this).execute(data);
 	}
 
@@ -92,20 +100,20 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 		for (JsonElement jsonEle : jsonArray) {
 			imageMetaList.add(gson.fromJson(jsonEle, ImageMeta.class));
 		}
-		mCallback.onImageMetaLoaded(imageMetaList);
+		mCallback.onImageMetaLoaded(imageMetaList, result.getData());
 		System.out.println("After Load Image Meta Data");
 		mCallback.afterLoadImageMeta();
 	}
 
 	@Override
 	public void onGetImageResult(ImageResult imageResult) {
-		int imageViewId = imageResult.getData().getInt(RESOURCE_ID_TAG);
-		String url = imageResult.getData().getString(ImageTask.URL_TAG);
+		Bundle data = imageResult.getData();
+		String url = data.getString(ImageTask.URL_TAG);
 		Bitmap bitmap = imageResult.getBitmap();
 		if (bitmap != null) {
 			// Here how to save it to cache
 			mFileCache.addToCache(url, bitmap);
 		}
-		mCallback.onImageLoaded(imageViewId, bitmap);
+		mCallback.onImageLoaded(bitmap, data);
 	}
 }

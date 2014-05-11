@@ -1,22 +1,24 @@
 package seaice.app.sharesight.loader;
 
-import java.util.List;
+import java.util.ArrayList;
 
-import android.graphics.Bitmap;
 import seaice.app.sharesight.data.ImageMeta;
+import android.graphics.Bitmap;
+import android.os.Bundle;
 
 public interface ImageLoaderCallback {
-	
+
 	public void beforeLoadImageMeta();
-	
-	public void onImageMetaLoaded(List<ImageMeta> imageMetaList);
-	
+
+	public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
+			Bundle extras);
+
 	public void afterLoadImageMeta();
-	
+
 	public void beforeLoadImage();
-	
-	public void onImageLoaded(int imageViewId, Bitmap bitmap);
-	
+
+	public void onImageLoaded(Bitmap bitmap, Bundle extras);
+
 	public void afterLoadImage();
 
 }

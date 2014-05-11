@@ -2,6 +2,7 @@ package seaice.app.sharesight;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -9,9 +10,9 @@ import java.util.Queue;
 import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderCallback;
-import seaice.app.sharesight.loader.ImageLoaderTask;
 import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.views.ImageScrollView;
+import seaice.app.sharesight.views.ImageScrollView.ImageViewClickListener;
 import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -53,9 +54,9 @@ public class MainActivity extends ActionBarActivity implements
 	private ImageScrollView mScrollView;
 
 	/** Image Loader Variable */
-	private Queue<ImageLoaderTask> mTaskQueue = new LinkedList<ImageLoaderTask>();
+	private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
 	private String mImagePath;
-	private int mImageCount = 0;
+	private int mPageCount = 0;
 	private static final int IMAGE_COUNT_PER_PAGE = 10;
 
 	private ImageLoader mLoader;
@@ -63,6 +64,10 @@ public class MainActivity extends ActionBarActivity implements
 	private boolean mLoading = false;
 
 	public static final String IMAGE_PATH_TAG = "IMAGE";
+
+	public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.MainActivity.IMAGE_VIEW_ID";
+
+	private ArrayList<ImageMeta> mMetaList;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -83,11 +88,27 @@ public class MainActivity extends ActionBarActivity implements
 				if (diff == 0 && !mLoading) {
 					mLoading = true;
 
-					if ((mImageCount % IMAGE_COUNT_PER_PAGE == 0)) {
-						mLoader.loadImageMetaList(mImageCount);
+					if ((mMetaList.size() % IMAGE_COUNT_PER_PAGE == 0)) {
+						++mPageCount;
+						mLoader.loadImageMetaList(mPageCount,
+								IMAGE_COUNT_PER_PAGE, null);
 					}
 				}
 			}
+		});
+		// set up the image clicked behavior
+		mScrollView.setImageViewClickListener(new ImageViewClickListener() {
+
+			@Override
+			public void onImageViewClicked(ImageView imageView, int index) {
+				Intent intent = new Intent(MainActivity.this,
+						ViewActivity.class);
+				intent.putParcelableArrayListExtra(
+						ViewActivity.IMAGE_META_LIST_TAG, mMetaList);
+				intent.putExtra(ViewActivity.CURRENT_ITEM_TAG, index);
+				startActivity(intent);
+			}
+
 		});
 
 		// set up the progress dialog action
@@ -104,8 +125,7 @@ public class MainActivity extends ActionBarActivity implements
 		});
 
 		mLoader = new ImageLoader(this);
-		mLoader.loadImageMetaList(mImageCount);
-
+		mLoader.loadImageMetaList(mPageCount, IMAGE_COUNT_PER_PAGE, null);
 	}
 
 	@Override
@@ -118,6 +138,10 @@ public class MainActivity extends ActionBarActivity implements
 		mImagePath = instanceState.getString(IMAGE_PATH_TAG);
 	}
 
+	public void onStop() {
+		super.onStop();
+	}
+
 	/**
 	 * Append images to this layout, firstly, prepare the image layouts, then
 	 * load images one by one.
@@ -128,15 +152,18 @@ public class MainActivity extends ActionBarActivity implements
 		for (ImageMeta imageMeta : imageMetaList) {
 			int retId = mScrollView.addImageView(imageMeta.getWidth(),
 					imageMeta.getHeight());
-			mTaskQueue.add(new ImageLoaderTask(retId, imageMeta.getUrl()));
+			mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
 		}
 	}
 
 	private void refresh() {
-		mImageCount = 0;
+		mPageCount = 0;
+		if (mMetaList != null) {
+			mMetaList.clear();
+		}
 		mScrollView.removeAllImageViews();
 
-		mLoader.loadImageMetaList(mImageCount);
+		mLoader.loadImageMetaList(mPageCount, IMAGE_COUNT_PER_PAGE, null);
 	}
 
 	private static final int REQUEST_IMAGE_CAPTURE = 14221;
@@ -210,24 +237,44 @@ public class MainActivity extends ActionBarActivity implements
 	}
 
 	@Override
-	public void onImageMetaLoaded(List<ImageMeta> imageMetaList) {
+	public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
+			Bundle extras) {
+		if (mMetaList == null) {
+			mMetaList = imageMetaList;
+		} else {
+			mMetaList.addAll(imageMetaList);
+		}
+
 		addImageViewList(imageMetaList);
 
-		mImageCount += mTaskQueue.size();
-		ImageLoaderTask task = mTaskQueue.poll();
-		mLoader.loadImage(task);
+		ImageTask task = mTaskQueue.poll();
+
+		// If the image meta list is empty, then there is no task...
+		if (task == null) {
+			return;
+		}
+		Bundle data = new Bundle();
+		data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
+		mLoader.loadImage(task.url, data);
 	}
 
 	@Override
-	public void onImageLoaded(int imageViewId, Bitmap bitmap) {
-		ImageView imageView = (ImageView) findViewById(imageViewId);
+	public void onImageLoaded(Bitmap bitmap, Bundle extras) {
+		ImageView imageView = (ImageView) findViewById(extras
+				.getInt(IMAGE_VIEW_ID_TAG));
 		if (imageView != null) {
 			imageView.setImageBitmap(bitmap);
 		}
 
 		// Needs continue?
-		ImageLoaderTask task = mTaskQueue.poll();
-		mLoader.loadImage(task);
+		ImageTask task = mTaskQueue.poll();
+		if (task == null) {
+			return;
+		}
+
+		Bundle data = new Bundle();
+		data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
+		mLoader.loadImage(task.url, data);
 	}
 
 	@Override
@@ -249,5 +296,15 @@ public class MainActivity extends ActionBarActivity implements
 	@Override
 	public void afterLoadImage() {
 
+	}
+
+	private static class ImageTask {
+		int imageViewId;
+		String url;
+
+		public ImageTask(int imageViewId, String url) {
+			this.imageViewId = imageViewId;
+			this.url = url;
+		}
 	}
 }
