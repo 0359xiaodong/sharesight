@@ -15,34 +15,34 @@ import android.os.Bundle;
 
 public class ImageTask extends AsyncTask<Bundle, Integer, ImageResult> {
 
-	private ImageResultClient mClient;
+    private ImageResultClient mClient;
 
-	public static final String URL_TAG = "URL";
+    public static final String URL_TAG = "URL";
 
-	public ImageTask(ImageResultClient client) {
-		super();
-		mClient = client;
-	}
+    public ImageTask(ImageResultClient client) {
+        super();
+        mClient = client;
+    }
 
-	@Override
-	protected ImageResult doInBackground(Bundle... params) {
-		Bundle data = params[0];
+    @Override
+    protected ImageResult doInBackground(Bundle... params) {
+        Bundle data = params[0];
 
-		String url = data.getString(URL_TAG);
+        String url = data.getString(URL_TAG);
 
-		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(url);
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(url);
 
-		try {
-			HttpResponse response = httpClient.execute(httpGet);
-			return new ImageResult(BitmapFactory.decodeStream(response
-					.getEntity().getContent()), data);
-		} catch (IOException e) {
-		}
-		return null;
-	}
+        try {
+            HttpResponse response = httpClient.execute(httpGet);
+            return new ImageResult(BitmapFactory.decodeStream(response
+                    .getEntity().getContent()), data);
+        } catch (IOException e) {
+        }
+        return null;
+    }
 
-	protected void onPostExecute(ImageResult imageResult) {
-		mClient.onGetImageResult(imageResult);
-	}
+    protected void onPostExecute(ImageResult imageResult) {
+        mClient.onGetImageResult(imageResult);
+    }
 }

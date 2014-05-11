@@ -7,7 +7,8 @@ import android.os.Bundle;
 
 public interface BCSSvcClient {
 
-	public void onFileUploaded(ObjectMetadata result, Bundle client);
-	
-	public void onFileDownloaded(DownloadObject downloadObject, Bundle clientData);
+    public void onFileUploaded(ObjectMetadata result, Bundle client);
+
+    public void onFileDownloaded(DownloadObject downloadObject,
+            Bundle clientData);
 }

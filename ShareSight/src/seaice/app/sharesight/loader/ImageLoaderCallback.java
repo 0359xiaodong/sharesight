@@ -8,17 +8,17 @@ import android.os.Bundle;
 
 public interface ImageLoaderCallback {
 
-	public void beforeLoadImageMeta();
+    public void beforeLoadImageMeta();
 
-	public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
-			Bundle extras);
+    public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
+            Bundle extras);
 
-	public void afterLoadImageMeta();
+    public void afterLoadImageMeta();
 
-	public void beforeLoadImage();
+    public void beforeLoadImage();
 
-	public void onImageLoaded(Bitmap bitmap, Bundle extras);
+    public void onImageLoaded(Bitmap bitmap, Bundle extras);
 
-	public void afterLoadImage();
+    public void afterLoadImage();
 
 }

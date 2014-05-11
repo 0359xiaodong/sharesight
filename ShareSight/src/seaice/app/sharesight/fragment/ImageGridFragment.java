@@ -8,9 +8,9 @@ import android.view.ViewGroup;
 
 public class ImageGridFragment extends Fragment {
 
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
 
-		return null;
-	}
+        return null;
+    }
 }

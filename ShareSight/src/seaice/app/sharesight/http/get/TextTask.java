@@ -16,36 +16,36 @@ import android.os.Bundle;
 
 public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
 
-	private TextResultClient mClient;
+    private TextResultClient mClient;
 
-	public static final String URL_TAG = "URL";
+    public static final String URL_TAG = "URL";
 
-	public TextTask(TextResultClient client) {
-		super();
-		mClient = client;
-	}
+    public TextTask(TextResultClient client) {
+        super();
+        mClient = client;
+    }
 
-	@Override
-	protected TextResult doInBackground(Bundle... params) {
-		Bundle data = params[0];
+    @Override
+    protected TextResult doInBackground(Bundle... params) {
+        Bundle data = params[0];
 
-		String url = data.getString(URL_TAG);
+        String url = data.getString(URL_TAG);
 
-		HttpClient httpClient = new DefaultHttpClient();
-		HttpGet httpGet = new HttpGet(url);
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(url);
 
-		try {
-			HttpResponse response = httpClient.execute(httpGet);
-			HttpEntity respEntity = response.getEntity();
-			return new TextResult(EntityUtils.toString(respEntity), data);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        try {
+            HttpResponse response = httpClient.execute(httpGet);
+            HttpEntity respEntity = response.getEntity();
+            return new TextResult(EntityUtils.toString(respEntity), data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	protected void onPostExecute(TextResult result) {
-		mClient.onGetTextResult(result);
-	}
+    protected void onPostExecute(TextResult result) {
+        mClient.onGetTextResult(result);
+    }
 }
