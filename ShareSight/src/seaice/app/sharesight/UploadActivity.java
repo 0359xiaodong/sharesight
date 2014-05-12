@@ -2,6 +2,12 @@ package seaice.app.sharesight;
 
 import java.io.File;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.LocationClientOption.LocationMode;
+
 import seaice.app.sharesight.poster.ImagePoster;
 import seaice.app.sharesight.poster.ImagePosterCallback;
 import seaice.app.sharesight.utils.AppUtils;
@@ -13,20 +19,24 @@ import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class UploadActivity extends ActionBarActivity implements
-        ImagePosterCallback {
+        ImagePosterCallback, BDLocationListener {
 
     private ImageView mImgView;
     private int mWidth = 0;
     private int mHeight = 0;
     private String mImagePath;
 
+    private TextView mLocationView;
+
     // The progress dialog to display percent ratio
     private ProgressDialog mProgressDialog;
 
     private ImagePoster mPoster;
+    private LocationClient mLocationClient;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,8 +50,28 @@ public class UploadActivity extends ActionBarActivity implements
 
         mImagePath = getIntent().getStringExtra(MainActivity.IMAGE_PATH_TAG);
         mImgView = (ImageView) findViewById(R.id.confirmImage);
+        mLocationView = (TextView) findViewById(R.id.upload_location);
 
         mPoster = new ImagePoster(this);
+        mLocationClient = new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(this);
+        mLocationClient.start();
+
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationMode(LocationMode.Hight_Accuracy);
+        option.setCoorType("bd09ll");
+        option.setScanSpan(5000);
+        option.setIsNeedAddress(true);
+        option.setNeedDeviceDirect(true);
+        mLocationClient.setLocOption(option);
+        mLocationClient.requestLocation();
+    }
+
+    public void onStop() {
+        super.onStop();
+        if (mLocationClient.isStarted()) {
+            mLocationClient.stop();
+        }
     }
 
     @Override
@@ -86,6 +116,19 @@ public class UploadActivity extends ActionBarActivity implements
     public void afterPostImage() {
         mProgressDialog.dismiss();
         finish();
+    }
+
+    @Override
+    public void onReceiveLocation(BDLocation location) {
+        if (location == null) {
+            return;
+        }
+        mLocationView.setText(location.getCity());
+    }
+
+    @Override
+    public void onReceivePoi(BDLocation location) {
+        // I DONOT CARE HERE
     }
 
 }

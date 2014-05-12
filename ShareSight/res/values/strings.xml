@@ -19,5 +19,6 @@
     <string name="action_good">Like</string>
     <string name="action_good_toast">Like it</string>
     <string name="action_sdcard_notfound">SD card not found</string>
+    <string name="action_location">location detecting&#8230;</string>
 
 </resources>

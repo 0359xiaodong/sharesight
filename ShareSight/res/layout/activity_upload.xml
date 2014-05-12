@@ -4,10 +4,17 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
+    <TextView android:id="@+id/upload_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/action_location"/>
+    
     <ImageView
         android:id="@+id/confirmImage"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:contentDescription="@string/img_upload_desc"
         android:scaleType="fitCenter" />
 
