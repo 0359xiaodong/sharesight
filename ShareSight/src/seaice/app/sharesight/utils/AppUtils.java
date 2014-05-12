@@ -39,7 +39,8 @@ public class AppUtils {
     }
 
     public static Bitmap decodeFile(String filePath, Context context) {
-        // On my xiaomi 2s, its value is 720, but its size is also really big.. 700k
+        // On my xiaomi 2s, its value is 720, but its size is also really big..
+        // 700k
         int desiredWidth = context.getResources().getDisplayMetrics().widthPixels;
         // int desiredWidth = 360;
 
@@ -88,7 +89,7 @@ public class AppUtils {
     public static void saveBitmapToFile(Bitmap bitmap, String filePath) {
         try {
             FileOutputStream out = new FileOutputStream(filePath);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out);
             bitmap = null;
         } catch (FileNotFoundException e) {
             // error happened
