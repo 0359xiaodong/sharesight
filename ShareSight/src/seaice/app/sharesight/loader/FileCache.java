@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import seaice.app.sharesight.utils.AppUtils;
+import seaice.app.sharesight.utils.BitmapUtils;
 import android.graphics.Bitmap;
 import android.os.Environment;
 
@@ -56,7 +56,7 @@ public class FileCache {
     public Bitmap getBitmapFromCache(String url) {
         File file = new File(IMAGE_CACHE_PATH + "/" + url.hashCode());
         if (file.exists()) {
-            return AppUtils.decodeFileWithoutScale(file);
+            return BitmapUtils.decodeFileWithoutScale(file);
         } else {
             return null;
         }

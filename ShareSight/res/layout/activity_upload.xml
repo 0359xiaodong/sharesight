@@ -4,12 +4,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <TextView android:id="@+id/upload_location"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="@string/action_location"/>
-    
     <ImageView
         android:id="@+id/confirmImage"
         android:layout_width="match_parent"
@@ -17,5 +11,44 @@
         android:layout_weight="1"
         android:contentDescription="@string/img_upload_desc"
         android:scaleType="fitCenter" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/layout_border"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/upload_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/upload_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/action_upload_location"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/upload_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/action_upload_hint"
+                android:inputType="textMultiLine"
+                android:maxLines="3"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

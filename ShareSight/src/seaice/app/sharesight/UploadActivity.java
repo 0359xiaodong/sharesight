@@ -2,17 +2,12 @@ package seaice.app.sharesight;
 
 import java.io.File;
 
-import com.baidu.location.BDLocation;
-import com.baidu.location.BDLocationListener;
-import com.baidu.location.LocationClient;
-import com.baidu.location.LocationClientOption;
-import com.baidu.location.LocationClientOption.LocationMode;
-
 import seaice.app.sharesight.poster.ImagePoster;
 import seaice.app.sharesight.poster.ImagePosterCallback;
-import seaice.app.sharesight.utils.AppUtils;
+import seaice.app.sharesight.utils.BitmapUtils;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.telephony.TelephonyManager;
@@ -21,6 +16,12 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.LocationClientOption.LocationMode;
 
 public class UploadActivity extends ActionBarActivity implements
         ImagePosterCallback, BDLocationListener {
@@ -51,6 +52,7 @@ public class UploadActivity extends ActionBarActivity implements
         mImagePath = getIntent().getStringExtra(MainActivity.IMAGE_PATH_TAG);
         mImgView = (ImageView) findViewById(R.id.confirmImage);
         mLocationView = (TextView) findViewById(R.id.upload_location);
+        mLocationView.setTextColor(Color.BLUE);
 
         mPoster = new ImagePoster(this);
         mLocationClient = new LocationClient(getApplicationContext());
@@ -98,7 +100,7 @@ public class UploadActivity extends ActionBarActivity implements
     }
 
     private void setImageViewSource() {
-        Bitmap bitmap = AppUtils.decodeFileWithoutScale(new File(mImagePath));
+        Bitmap bitmap = BitmapUtils.decodeFileWithoutScale(new File(mImagePath));
         mImgView.setImageBitmap(bitmap);
         mWidth = bitmap.getWidth();
         mHeight = bitmap.getHeight();
@@ -123,7 +125,7 @@ public class UploadActivity extends ActionBarActivity implements
         if (location == null) {
             return;
         }
-        mLocationView.setText(location.getCity());
+        mLocationView.setText(location.getAddrStr());
     }
 
     @Override

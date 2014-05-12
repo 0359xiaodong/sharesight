@@ -11,6 +11,7 @@ import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderCallback;
 import seaice.app.sharesight.utils.AppUtils;
+import seaice.app.sharesight.utils.BitmapUtils;
 import seaice.app.sharesight.views.ImageScrollView;
 import seaice.app.sharesight.views.ImageScrollView.ImageViewClickListener;
 import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
@@ -189,8 +190,8 @@ public class MainActivity extends ActionBarActivity implements
             if (cameraIntent.resolveActivity(getPackageManager()) != null) {
                 File imageFile = null;
                 try {
-                    imageFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH,
-                            mDeviceId);
+                    imageFile = BitmapUtils.createTempImageFile(
+                            IMAGE_CACHE_PATH, mDeviceId);
                     mImagePath = imageFile.getAbsolutePath();
                 } catch (IOException e) {
                     // OMMIT THIS EXCEPTION
@@ -237,7 +238,7 @@ public class MainActivity extends ActionBarActivity implements
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             // the file need to be in cache, it is now already in cache, but is
             // not scaled
-            AppUtils.decodeAndSave(mImagePath, mImagePath, this);
+            BitmapUtils.decodeAndSave(mImagePath, mImagePath, this);
             Intent uploadActivity = new Intent(this, UploadActivity.class);
             uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
             startActivity(uploadActivity);
@@ -246,11 +247,11 @@ public class MainActivity extends ActionBarActivity implements
             Uri selected = data.getData();
             try {
                 // create the temp file
-                File cacheFile = AppUtils.createTempImageFile(IMAGE_CACHE_PATH,
-                        mDeviceId);
+                File cacheFile = BitmapUtils.createTempImageFile(
+                        IMAGE_CACHE_PATH, mDeviceId);
                 mImagePath = cacheFile.getAbsolutePath();
                 // move the selected file into cache folder
-                AppUtils.decodeAndSave(
+                BitmapUtils.decodeAndSave(
                         AppUtils.getRealPathFromUri(this, selected),
                         mImagePath, this);
                 Intent uploadActivity = new Intent(this, UploadActivity.class);

@@ -19,6 +19,7 @@
     <string name="action_good">赞</string>
     <string name="action_good_toast">已赞</string>
     <string name="action_sdcard_notfound">SD卡未找到</string>
-    <string name="action_location">正在定位&#8230;</string>
- 
+    <string name="action_upload_location">正在定位&#8230;</string>
+    <string name="action_upload_hint">说点什么(可选)&#8230;</string>
+
 </resources>
