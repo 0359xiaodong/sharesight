@@ -84,7 +84,7 @@ public class UploadActivity extends ActionBarActivity implements
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.upload, menu);
+        getMenuInflater().inflate(R.menu.activity_upload, menu);
         return true;
     }
 

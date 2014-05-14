@@ -226,7 +226,7 @@ public class MainActivity extends ActionBarActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main, menu);
+        inflater.inflate(R.menu.activity_main, menu);
         return super.onCreateOptionsMenu(menu);
 
     }
@@ -263,7 +263,6 @@ public class MainActivity extends ActionBarActivity implements
                         getResources().getText(R.string.action_sdcard_notfound),
                         Toast.LENGTH_LONG).show();
             }
-
         }
     }
 

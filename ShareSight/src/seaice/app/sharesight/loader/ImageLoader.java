@@ -114,5 +114,6 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
             mFileCache.addToCache(url, bitmap);
         }
         mCallback.onImageLoaded(bitmap, data);
+        mCallback.afterLoadImage();
     }
 }

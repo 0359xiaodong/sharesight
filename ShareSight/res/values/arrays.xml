@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="pager_titles">
+        <item>Newest</item>
+        <item>Hottest</item>
+        <item>Topic</item>
+        <item>Me</item>
+    </string-array>
+
+</resources>

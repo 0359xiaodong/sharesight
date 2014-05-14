@@ -36,7 +36,7 @@ public class ViewActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.view, menu);
+        getMenuInflater().inflate(R.menu.activity_view, menu);
         return true;
     }
 
