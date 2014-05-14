@@ -21,12 +21,13 @@
 
     <application
         android:allowBackup="true"
+        android:name="seaice.app.sharesight.ShareSight"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.AppCompat.Light" >
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
-            android:value="YOUR API KEY" />
+            android:value="API KEY" />
 
         <activity
             android:name="seaice.app.sharesight.MainActivity"
