@@ -1,13 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:myapp="http://schemas.android.com/apk/res/seaice.app.sharesight"
+<android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pager"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
-
-    <seaice.app.sharesight.views.ImageScrollView
-        android:id="@+id/container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        myapp:marginH="8"
-        myapp:marginV="8" />
-
-</LinearLayout>
+    android:layout_height="match_parent" />

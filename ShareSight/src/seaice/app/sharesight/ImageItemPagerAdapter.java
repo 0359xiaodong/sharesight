@@ -12,12 +12,26 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
+/**
+ * The Dynamic Image Displayer, which means the image array number should be
+ * dynamically increased.
+ * 
+ * @author zhb
+ * 
+ */
 public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
 
+    /**
+     * The array list of image meta data
+     */
     private List<ImageMeta> mMetaList;
-
+    /**
+     * The backend to load image meta and image
+     */
     private ImageLoader mLoader;
-
+    /**
+     * a config variable, how many number of images should be loaded once a time
+     */
     private static final int IMAGE_COUNT_PER_PAGE = 10;
 
     public ImageItemPagerAdapter(FragmentManager fm,
@@ -31,6 +45,7 @@ public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
                     Bundle extras) {
                 if (imageMetaList != null) {
                     mMetaList.addAll(imageMetaList);
+                    // Must invoke this method, or there is IllegalStateException
                     ImageItemPagerAdapter.this.notifyDataSetChanged();
                 }
             }
@@ -40,7 +55,7 @@ public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
     @Override
     public Fragment getItem(int i) {
         int total = getCount();
-        // if it is the last image
+        // if it is the last image and there may be more image
         if (i == (total - 1) && (total % IMAGE_COUNT_PER_PAGE == 0)) {
             mLoader.loadImageMetaList(total / IMAGE_COUNT_PER_PAGE,
                     IMAGE_COUNT_PER_PAGE, null);

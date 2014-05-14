@@ -25,20 +25,43 @@ import com.baidu.location.LocationClientOption.LocationMode;
 
 public class UploadActivity extends ActionBarActivity implements
         ImagePosterCallback, BDLocationListener {
-
+    /**
+     * The contrast that the caller should provide a value with this key
+     */
+    public static final String IMAGE_PATH_TAG = "seaice.app.sharesight.UploadActivity.IMAGE_PATH";
+    /**
+     * Hold this preview Image
+     */
     private ImageView mImgView;
+    /**
+     * Width of this image
+     */
     private int mWidth = 0;
+    /**
+     * Height of this image
+     */
     private int mHeight = 0;
+    /**
+     * Where the image locate
+     */
     private String mImagePath;
-
+    /**
+     * Show the location where the user are currently.
+     */
     private TextView mLocationView;
 
-    // The progress dialog to display percent ratio
     private ProgressDialog mProgressDialog;
 
+    /**
+     * The backend to post an image to server
+     */
     private ImagePoster mPoster;
+    /**
+     * The client proxy to user the location service
+     */
     private LocationClient mLocationClient;
 
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload);
@@ -49,10 +72,16 @@ public class UploadActivity extends ActionBarActivity implements
                 R.string.action_uploading)
                 + "...");
 
-        mImagePath = getIntent().getStringExtra(MainActivity.IMAGE_PATH_TAG);
+        mImagePath = getIntent().getStringExtra(IMAGE_PATH_TAG);
         mImgView = (ImageView) findViewById(R.id.confirmImage);
         mLocationView = (TextView) findViewById(R.id.upload_location);
         mLocationView.setTextColor(Color.BLUE);
+
+        Bitmap bitmap = BitmapUtils
+                .decodeFileWithoutScale(new File(mImagePath));
+        mImgView.setImageBitmap(bitmap);
+        mWidth = bitmap.getWidth();
+        mHeight = bitmap.getHeight();
 
         mPoster = new ImagePoster(this);
         mLocationClient = new LocationClient(getApplicationContext());
@@ -69,17 +98,13 @@ public class UploadActivity extends ActionBarActivity implements
         mLocationClient.requestLocation();
     }
 
+    @Override
     public void onStop() {
         super.onStop();
+        // should stop the location client
         if (mLocationClient.isStarted()) {
             mLocationClient.stop();
         }
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        setImageViewSource();
     }
 
     @Override
@@ -97,13 +122,6 @@ public class UploadActivity extends ActionBarActivity implements
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void setImageViewSource() {
-        Bitmap bitmap = BitmapUtils.decodeFileWithoutScale(new File(mImagePath));
-        mImgView.setImageBitmap(bitmap);
-        mWidth = bitmap.getWidth();
-        mHeight = bitmap.getHeight();
     }
 
     @Override

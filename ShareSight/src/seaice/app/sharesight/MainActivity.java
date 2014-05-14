@@ -2,194 +2,119 @@ package seaice.app.sharesight;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
-import seaice.app.sharesight.data.ImageMeta;
-import seaice.app.sharesight.loader.ImageLoader;
-import seaice.app.sharesight.loader.ImageLoaderCallback;
 import seaice.app.sharesight.utils.AppUtils;
 import seaice.app.sharesight.utils.BitmapUtils;
-import seaice.app.sharesight.views.ImageScrollView;
-import seaice.app.sharesight.views.ImageScrollView.ImageViewClickListener;
-import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBar.Tab;
+import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 /**
- * The entry of this application, this activity will take the responsibility to
- * display images, Firstly, it will try to get the meta data of image list. Here
- * the meta data means the image width and height and also the url which points
- * to it. It is important to decide the Images layouts.. Then this activity will
- * load each image one by one.
+ * Here is the entrance Activity for this application, there will be four tabs,
+ * and so four fragments.
  * 
  * @author zhb
  * 
  */
-public class MainActivity extends ActionBarActivity implements
-        ImageLoaderCallback {
+public class MainActivity extends ActionBarActivity implements TabListener {
 
     /**
-     * While taking communication with server, show this dialog
+     * Request the camera to take a picture
      */
-    private ProgressDialog mProgressDialog;
+    private static final int REQUEST_IMAGE_CAPTURE = 14221;
     /**
-     * The ScrollView container..
+     * Request to select a photo from media store
      */
-    private ImageScrollView mScrollView;
-
-    /** Image Loader Variable */
-    private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
-    private String mImagePath;
-    private int mPageCount = 0;
-    private static final int IMAGE_COUNT_PER_PAGE = 10;
-
-    private ImageLoader mLoader;
-
-    private boolean mLoading = false;
-
-    public static final String IMAGE_PATH_TAG = "IMAGE";
-
-    public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.MainActivity.IMAGE_VIEW_ID";
-
-    private ArrayList<ImageMeta> mMetaList;
-
+    private static final int REQUEST_IMAGE_SELECT = 12241;
+    /**
+     * Where to save the to be uploaded picture
+     */
+    private static final String IMAGE_CACHE_PATH = Environment
+            .getExternalStorageDirectory() + "/ShareSight/cache/capture";
+    /**
+     * The device id used to append to the picture file path
+     */
     private String mDeviceId;
+    /**
+     * Where the to be uploaded picture locates
+     */
+    private String mImagePath;
+    /**
+     * The view pager to hold the four fragments
+     */
+    private ViewPager mViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // set up the ImageScrollView
-        mScrollView = (ImageScrollView) findViewById(R.id.container);
-        mScrollView.setScrollViewListener(new ScrollViewListenner() {
-            @Override
-            public void onScrollChanged(ImageScrollView scrollView, int x,
-                    int y, int oldx, int oldy) {
-                View view = (View) scrollView.getChildAt(scrollView
-                        .getChildCount() - 1);
-                int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
-                        .getScrollY()));
-                /* If we reach the bottom and is not loading currently */
-                if (diff == 0 && !mLoading) {
-                    mLoading = true;
+        mViewPager = (ViewPager) findViewById(R.id.pager);
+        ImageGridPagerAdapter adapter = new ImageGridPagerAdapter(
+                getSupportFragmentManager());
+        mViewPager.setAdapter(adapter);
 
-                    if ((mMetaList.size() % IMAGE_COUNT_PER_PAGE == 0)) {
-                        ++mPageCount;
-                        mLoader.loadImageMetaList(mPageCount,
-                                IMAGE_COUNT_PER_PAGE, null);
+        final ActionBar actionBar = getSupportActionBar();
+        actionBar.setHomeButtonEnabled(false);
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+
+        mViewPager
+                .setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+                    @Override
+                    public void onPageSelected(int position) {
+                        actionBar.setSelectedNavigationItem(position);
                     }
-                }
-            }
-        });
-        // set up the image clicked behavior
-        mScrollView.setImageViewClickListener(new ImageViewClickListener() {
+                });
 
-            @Override
-            public void onImageViewClicked(ImageView imageView, int index) {
-                Intent intent = new Intent(MainActivity.this,
-                        ViewActivity.class);
-                intent.putParcelableArrayListExtra(
-                        ViewActivity.IMAGE_META_LIST_TAG, mMetaList);
-                intent.putExtra(ViewActivity.CURRENT_ITEM_TAG, index);
-                startActivity(intent);
-            }
-
-        });
-
-        // set up the progress dialog action
-        mProgressDialog = new ProgressDialog(this,
-                ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setMessage(getResources().getText(
-                R.string.action_loading)
-                + "...");
-        mProgressDialog.setCancelable(true);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setOnCancelListener(new OnCancelListener() {
-            @Override
-            public void onCancel(DialogInterface dialog) {
-                mLoader.setCancelled(true);
-            }
-        });
+        // For each of the sections in the app, add a tab to the action bar.
+        for (int i = 0; i < adapter.getCount(); i++) {
+            // Create a tab with text corresponding to the page title defined by
+            // the adapter.
+            // Also specify this Activity object, which implements the
+            // TabListener interface, as the
+            // listener for when this tab is selected.
+            actionBar.addTab(actionBar.newTab()
+                    .setText(adapter.getPageTitle(i)).setTabListener(this));
+        }
 
         TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
         mDeviceId = tm.getDeviceId();
-
-        mLoader = new ImageLoader(this);
-        mLoader.loadImageMetaList(mPageCount, IMAGE_COUNT_PER_PAGE, null);
     }
 
     @Override
     public void onSaveInstanceState(Bundle instanceState) {
-        instanceState.putString(IMAGE_PATH_TAG, mImagePath);
+        // In case when the phone's orientation changes
+        instanceState.putString(UploadActivity.IMAGE_PATH_TAG, mImagePath);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle instanceState) {
-        mImagePath = instanceState.getString(IMAGE_PATH_TAG);
+        mImagePath = instanceState.getString(UploadActivity.IMAGE_PATH_TAG);
     }
-
-    public void onStop() {
-        super.onStop();
-    }
-
-    /**
-     * Append images to this layout, firstly, prepare the image layouts, then
-     * load images one by one.
-     * 
-     * @param imageMetaList
-     */
-    private void addImageViewList(List<ImageMeta> imageMetaList) {
-        for (ImageMeta imageMeta : imageMetaList) {
-            int retId = mScrollView.addImageView(imageMeta.getWidth(),
-                    imageMeta.getHeight());
-            mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
-        }
-    }
-
-    private void refresh() {
-        mPageCount = 0;
-        if (mMetaList != null) {
-            mMetaList.clear();
-        }
-        mScrollView.removeAllImageViews();
-
-        mLoader.loadImageMetaList(mPageCount, IMAGE_COUNT_PER_PAGE, null);
-    }
-
-    private static final int REQUEST_IMAGE_CAPTURE = 14221;
-
-    private static final int REQUEST_IMAGE_SELECT = 12241;
-
-    private static final String IMAGE_CACHE_PATH = Environment
-            .getExternalStorageDirectory() + "/ShareSight/cache/capture";
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_camera_capture) {
+            // handle the case when we need to capture an instance photo
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (cameraIntent.resolveActivity(getPackageManager()) != null) {
                 File imageFile = null;
                 try {
+                    // where the photo should locate
                     imageFile = BitmapUtils.createTempImageFile(
                             IMAGE_CACHE_PATH, mDeviceId);
                     mImagePath = imageFile.getAbsolutePath();
@@ -210,11 +135,10 @@ public class MainActivity extends ActionBarActivity implements
             }
             return true;
         } else if (id == R.id.action_camera_select) {
+            // handle the case when we need to select a file from MediaStore
             Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
             photoPickerIntent.setType("image/*");
             startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
-        } else if (id == R.id.action_refresh) {
-            refresh();
         } else if (id == R.id.action_exit) {
             // exit this activity, also means exit the application
             finish();
@@ -224,29 +148,24 @@ public class MainActivity extends ActionBarActivity implements
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.activity_main, menu);
         return super.onCreateOptionsMenu(menu);
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // when the camera activity returns, we need to let the user confirm
-        // this image, then upload
+        // Image Capture returns
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            // the file need to be in cache, it is now already in cache, but is
-            // not scaled
+            // scale it and save again
             BitmapUtils.decodeAndSave(mImagePath, mImagePath, this);
             Intent uploadActivity = new Intent(this, UploadActivity.class);
-            uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
+            uploadActivity.putExtra(UploadActivity.IMAGE_PATH_TAG, mImagePath);
             startActivity(uploadActivity);
         } else if (requestCode == REQUEST_IMAGE_SELECT
                 && resultCode == RESULT_OK) {
             Uri selected = data.getData();
             try {
-                // create the temp file
                 File cacheFile = BitmapUtils.createTempImageFile(
                         IMAGE_CACHE_PATH, mDeviceId);
                 mImagePath = cacheFile.getAbsolutePath();
@@ -255,7 +174,8 @@ public class MainActivity extends ActionBarActivity implements
                         AppUtils.getRealPathFromUri(this, selected),
                         mImagePath, this);
                 Intent uploadActivity = new Intent(this, UploadActivity.class);
-                uploadActivity.putExtra(IMAGE_PATH_TAG, mImagePath);
+                uploadActivity.putExtra(UploadActivity.IMAGE_PATH_TAG,
+                        mImagePath);
                 startActivity(uploadActivity);
             } catch (IOException e) {
                 Toast.makeText(
@@ -267,74 +187,17 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
-            Bundle extras) {
-        if (mMetaList == null) {
-            mMetaList = imageMetaList;
-        } else {
-            mMetaList.addAll(imageMetaList);
-        }
-
-        addImageViewList(imageMetaList);
-
-        ImageTask task = mTaskQueue.poll();
-
-        // If the image meta list is empty, then there is no task...
-        if (task == null) {
-            return;
-        }
-        Bundle data = new Bundle();
-        data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
-        mLoader.loadImage(task.url, data);
+    public void onTabReselected(Tab tab, FragmentTransaction fragmentTransaction) {
+        // I do not care currently
     }
 
     @Override
-    public void onImageLoaded(Bitmap bitmap, Bundle extras) {
-        ImageView imageView = (ImageView) findViewById(extras
-                .getInt(IMAGE_VIEW_ID_TAG));
-        if (imageView != null) {
-            imageView.setImageBitmap(bitmap);
-        }
-
-        // Needs continue?
-        ImageTask task = mTaskQueue.poll();
-        if (task == null) {
-            return;
-        }
-
-        Bundle data = new Bundle();
-        data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
-        mLoader.loadImage(task.url, data);
+    public void onTabSelected(Tab tab, FragmentTransaction fragmentTransaction) {
+        mViewPager.setCurrentItem(tab.getPosition());
     }
 
     @Override
-    public void beforeLoadImageMeta() {
-        mProgressDialog.show();
-    }
-
-    @Override
-    public void beforeLoadImage() {
-
-    }
-
-    @Override
-    public void afterLoadImageMeta() {
-        mLoading = false;
-        mProgressDialog.dismiss();
-    }
-
-    @Override
-    public void afterLoadImage() {
-
-    }
-
-    private static class ImageTask {
-        int imageViewId;
-        String url;
-
-        public ImageTask(int imageViewId, String url) {
-            this.imageViewId = imageViewId;
-            this.url = url;
-        }
+    public void onTabUnselected(Tab tab, FragmentTransaction fragmentTransaction) {
+        // I do not care currently
     }
 }

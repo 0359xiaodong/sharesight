@@ -29,13 +29,26 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+/**
+ * A fragment to display image wall maybe I can call it like this, This fragment
+ * will reuse most of the code from MainActivity(previous version), Based on the
+ * ImageScrollView.
+ * 
+ * @author zhb
+ * 
+ */
 public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
-
-    /** Image Loader Variable */
+    /**
+     * The image load task queue
+     */
     private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
-
+    /**
+     * The view to hold all the added image
+     */
     protected ImageScrollView mScrollView;
-
+    /**
+     * The image meta data describes which images to load
+     */
     protected ArrayList<ImageMeta> mMetaList;
 
     protected boolean mLoading = false;
@@ -112,6 +125,7 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
         mScrollView.setScrollViewListener(new DefaultScrollViewListenner());
         mScrollView
                 .setImageViewClickListener(new DefaultImageViewClickListener());
+        onRefresh();
     }
 
     public void onLoadImageMeta() {
