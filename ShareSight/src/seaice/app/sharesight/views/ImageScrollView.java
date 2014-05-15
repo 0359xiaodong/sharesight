@@ -85,6 +85,13 @@ public class ImageScrollView extends ScrollView {
         mColumnMetaList.clear();
     }
 
+    public int getImageCount() {
+        if (mLayout == null) {
+            return 0;
+        }
+        return mLayout.getChildCount();
+    }
+
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);

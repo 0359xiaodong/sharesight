@@ -19,7 +19,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
  * @author zhb
  * 
  */
-public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
+public class ViewPagerAdapter extends FragmentStatePagerAdapter {
 
     /**
      * The array list of image meta data
@@ -34,7 +34,7 @@ public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
      */
     private static final int IMAGE_COUNT_PER_PAGE = 10;
 
-    public ImageItemPagerAdapter(FragmentManager fm,
+    public ViewPagerAdapter(FragmentManager fm,
             ArrayList<ImageMeta> metaList) {
         super(fm);
 
@@ -46,7 +46,7 @@ public class ImageItemPagerAdapter extends FragmentStatePagerAdapter {
                 if (imageMetaList != null) {
                     mMetaList.addAll(imageMetaList);
                     // Must invoke this method, or there is IllegalStateException
-                    ImageItemPagerAdapter.this.notifyDataSetChanged();
+                    ViewPagerAdapter.this.notifyDataSetChanged();
                 }
             }
         });

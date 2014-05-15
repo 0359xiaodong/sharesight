@@ -125,7 +125,9 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
         mScrollView.setScrollViewListener(new DefaultScrollViewListenner());
         mScrollView
                 .setImageViewClickListener(new DefaultImageViewClickListener());
-        onRefresh();
+        if (mScrollView.getImageCount() == 0) {
+            onRefresh();
+        }
     }
 
     public void onLoadImageMeta() {

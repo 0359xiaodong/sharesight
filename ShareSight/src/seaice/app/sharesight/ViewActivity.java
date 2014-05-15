@@ -28,7 +28,7 @@ public class ViewActivity extends ActionBarActivity {
                 .getParcelableArrayListExtra(IMAGE_META_LIST_TAG);
 
         ViewPager viewPager = (ViewPager) findViewById(R.id.view_pager);
-        PagerAdapter adapter = new ImageItemPagerAdapter(
+        PagerAdapter adapter = new ViewPagerAdapter(
                 getSupportFragmentManager(), mMetaList);
         viewPager.setAdapter(adapter);
         viewPager.setCurrentItem(currentIndex);

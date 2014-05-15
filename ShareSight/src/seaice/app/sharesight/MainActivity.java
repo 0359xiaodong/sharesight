@@ -63,7 +63,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
         setContentView(R.layout.activity_main);
 
         mViewPager = (ViewPager) findViewById(R.id.pager);
-        ImageGridPagerAdapter adapter = new ImageGridPagerAdapter(
+        MainPagerAdapter adapter = new MainPagerAdapter(
                 getSupportFragmentManager());
         mViewPager.setAdapter(adapter);
 
