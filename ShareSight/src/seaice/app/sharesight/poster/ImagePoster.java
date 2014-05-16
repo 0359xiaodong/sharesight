@@ -24,7 +24,7 @@ public class ImagePoster implements BCSSvcClient, TextResultClient {
 
     private BCSSvc mBCS;
 
-    private boolean mDebug = false;
+    private boolean mDebug = true;
 
     public ImagePoster(ImagePosterCallback callback) {
         mCallback = callback;
@@ -82,6 +82,8 @@ public class ImagePoster implements BCSSvcClient, TextResultClient {
         valueArray.add(imageMeta.getLongitude() + "");
         keyArray.add("latitude");
         valueArray.add(imageMeta.getLatitude() + "");
+        keyArray.add("text");
+        valueArray.add(imageMeta.getText());
 
         data.putStringArrayList(TextTask.KEY_ARRAY_TAG, keyArray);
         data.putStringArrayList(TextTask.VALUE_ARRAY_TAG, valueArray);

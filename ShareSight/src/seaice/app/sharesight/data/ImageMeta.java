@@ -21,8 +21,11 @@ public class ImageMeta implements Parcelable {
 
     private String deviceid;
 
+    private String text;
+
     public ImageMeta(String url, int width, int height, String city,
-            String addr, double longitude, double latitude, String deviceid) {
+            String addr, double longitude, double latitude, String deviceid,
+            String text) {
         this.url = url;
         this.width = width;
         this.height = height;
@@ -31,10 +34,11 @@ public class ImageMeta implements Parcelable {
         this.longitude = longitude;
         this.latitude = latitude;
         this.deviceid = deviceid;
+        this.text = text;
     }
 
     public ImageMeta() {
-        this("", 0, 0, "", "", 0, 0, "");
+        this("", 0, 0, "", "", 0, 0, "", "");
     }
 
     public String getUrl() {
@@ -69,6 +73,10 @@ public class ImageMeta implements Parcelable {
         return deviceid;
     }
 
+    public String getText() {
+        return text;
+    }
+
     public void setUrl(String url) {
         this.url = url;
     }
@@ -101,6 +109,10 @@ public class ImageMeta implements Parcelable {
         this.deviceid = deviceid;
     }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -116,6 +128,7 @@ public class ImageMeta implements Parcelable {
         dest.writeDouble(longitude);
         dest.writeDouble(latitude);
         dest.writeString(deviceid);
+        dest.writeString(text);
     }
 
     public static final Parcelable.Creator<ImageMeta> CREATOR = new Creator<ImageMeta>() {
@@ -130,8 +143,9 @@ public class ImageMeta implements Parcelable {
             double longitude = source.readDouble();
             double latitude = source.readDouble();
             String deviceid = source.readString();
+            String text = source.readString();
             return new ImageMeta(url, width, height, city, addr, longitude,
-                    latitude, deviceid);
+                    latitude, deviceid, text);
         }
 
         @Override

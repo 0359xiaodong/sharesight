@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,6 +46,8 @@ public class UploadActivity extends ActionBarActivity implements
      */
     private TextView mLocationView;
 
+    private EditText mEditText;
+
     private ProgressDialog mProgressDialog;
 
     /**
@@ -64,6 +67,7 @@ public class UploadActivity extends ActionBarActivity implements
         mImgView = (ImageView) findViewById(R.id.confirmImage);
         mLocationView = (TextView) findViewById(R.id.upload_location);
         mLocationView.setTextColor(Color.BLUE);
+        mEditText = (EditText) findViewById(R.id.upload_text);
 
         mImagePath = getIntent().getStringExtra(IMAGE_PATH_TAG);
         Bitmap bitmap = BitmapUtils
@@ -132,6 +136,7 @@ public class UploadActivity extends ActionBarActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_upload) {
+            mImageMeta.setText(mEditText.getText().toString());
             mPoster.post(mImagePath, mImageMeta);
             return true;
         }
