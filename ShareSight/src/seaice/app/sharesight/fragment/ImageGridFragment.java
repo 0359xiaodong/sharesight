@@ -16,8 +16,8 @@ import seaice.app.sharesight.views.ImageScrollView.ScrollViewListenner;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.DialogInterface.OnCancelListener;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -29,6 +29,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.LocationClientOption.LocationMode;
+import com.umeng.analytics.MobclickAgent;
+
 /**
  * A fragment to display image wall maybe I can call it like this, This fragment
  * will reuse most of the code from MainActivity(previous version), Based on the
@@ -37,7 +44,8 @@ import android.widget.ImageView;
  * @author zhb
  * 
  */
-public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
+public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
+        BDLocationListener {
     /**
      * The image load task queue
      */
@@ -63,11 +71,38 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
 
     public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_VIEW_ID";
 
+    private static final String PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
+
+    protected LocationClient mLocationClient;
+
+    protected BDLocation mLocation;
+
+    protected String mDefaultCity = "北京";
+
     public ImageGridFragment() {
         super();
         setHasOptionsMenu(true);
 
         mLoader = new ImageLoader(this);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MobclickAgent.onPageStart(PAGE_TAG);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPageEnd(PAGE_TAG);
+
+        if (mLocationClient.isStarted()) {
+            mLocationClient.stop();
+        }
+        if (mProgressDialog.isShowing()) {
+            mProgressDialog.dismiss();
+        }
     }
 
     @Override
@@ -88,6 +123,17 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
                 mLoader.setCancelled(true);
             }
         });
+
+        mLocationClient = new LocationClient(activity.getApplicationContext());
+        mLocationClient.registerLocationListener(this);
+
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationMode(LocationMode.Battery_Saving);
+        option.setCoorType("bd09ll");
+        option.setScanSpan(0);
+        option.setIsNeedAddress(true);
+        option.setNeedDeviceDirect(true);
+        mLocationClient.setLocOption(option);
     }
 
     @Override
@@ -111,6 +157,11 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
                 container, false);
         mScrollView = (ImageScrollView) rootView.findViewById(R.id.container);
         onGetScrollView();
+        if (mScrollView.getImageCount() == 0) {
+            System.out
+                    .println("ImageViewCount: " + mScrollView.getImageCount());
+            onRefresh();
+        }
         return rootView;
     }
 
@@ -125,25 +176,30 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
         mScrollView.setScrollViewListener(new DefaultScrollViewListenner());
         mScrollView
                 .setImageViewClickListener(new DefaultImageViewClickListener());
-        if (mScrollView.getImageCount() == 0) {
-            onRefresh();
-        }
     }
 
-    public void onLoadImageMeta() {
-        // This should be override by subclasses
-        mLoader.loadImageMetaList(mPage, IMAGE_COUNT_PER_PAGE, null);
-    }
-
-    public void onRefresh() {
-        // This should be override by subclasses
+    private void onRefresh() {
         mPage = 0;
         if (mMetaList != null) {
             mMetaList.clear();
         }
         mScrollView.removeAllImageViews();
 
-        onLoadImageMeta();
+        mLocationClient.start();
+        mLocationClient.requestLocation();
+    }
+
+    /**
+     * subclasses can override this method to provide yourself strategy
+     */
+    public void onLoadImageMeta() {
+        if (mLocation == null) {
+            mLoader.loadImageMetaList(mDefaultCity, mPage,
+                    IMAGE_COUNT_PER_PAGE, null);
+        } else {
+            mLoader.loadImageMetaList(mLocation.getCity(), mPage,
+                    IMAGE_COUNT_PER_PAGE, null);
+        }
     }
 
     protected class DefaultScrollViewListenner implements ScrollViewListenner {
@@ -161,7 +217,7 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
 
                 if ((mMetaList.size() % IMAGE_COUNT_PER_PAGE == 0)) {
                     ++mPage;
-                    mLoader.loadImageMetaList(mPage, IMAGE_COUNT_PER_PAGE, null);
+                    mLocationClient.requestLocation();
                 }
             }
         }
@@ -178,6 +234,11 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
             intent.putParcelableArrayListExtra(
                     ViewActivity.IMAGE_META_LIST_TAG, mMetaList);
             intent.putExtra(ViewActivity.CURRENT_ITEM_TAG, index);
+            if (mLocation != null) {
+                intent.putExtra(ViewActivity.CITY_TAG, mLocation.getCity());
+            } else {
+                intent.putExtra(ViewActivity.CITY_TAG, mDefaultCity);
+            }
             startActivity(intent);
         }
 
@@ -267,5 +328,18 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
                     imageMeta.getHeight());
             mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
         }
+    }
+
+    @Override
+    public void onReceiveLocation(BDLocation location) {
+        System.out.println("OnReceiveLocation: " + location.getCity());
+        mLocation = location;
+        mLocationClient.stop();
+        onLoadImageMeta();
+    }
+
+    @Override
+    public void onReceivePoi(BDLocation location) {
+
     }
 }

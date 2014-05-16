@@ -16,11 +16,13 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
-import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
+
+import com.umeng.analytics.MobclickAgent;
+import com.umeng.message.PushAgent;
 
 /**
  * Here is the entrance Activity for this application, there will be four tabs,
@@ -44,18 +46,14 @@ public class MainActivity extends ActionBarActivity implements TabListener {
      */
     private static final String IMAGE_CACHE_PATH = Environment
             .getExternalStorageDirectory() + "/ShareSight/cache/capture";
-    /**
-     * The device id used to append to the picture file path
-     */
-    private String mDeviceId;
-    /**
-     * Where the to be uploaded picture locates
-     */
+
     private String mImagePath;
-    /**
-     * The view pager to hold the four fragments
-     */
     private ViewPager mViewPager;
+
+    /**
+     * Umeng API to push message to user
+     */
+    private PushAgent mPushAgent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,19 +77,27 @@ public class MainActivity extends ActionBarActivity implements TabListener {
                     }
                 });
 
-        // For each of the sections in the app, add a tab to the action bar.
         for (int i = 0; i < adapter.getCount(); i++) {
-            // Create a tab with text corresponding to the page title defined by
-            // the adapter.
-            // Also specify this Activity object, which implements the
-            // TabListener interface, as the
-            // listener for when this tab is selected.
             actionBar.addTab(actionBar.newTab()
                     .setText(adapter.getPageTitle(i)).setTabListener(this));
         }
 
-        TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        mDeviceId = tm.getDeviceId();
+        mPushAgent = PushAgent.getInstance(this);
+        mPushAgent.enable();
+
+        PushAgent.getInstance(this).onAppStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MobclickAgent.onResume(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPause(this);
     }
 
     @Override
@@ -116,7 +122,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
                 try {
                     // where the photo should locate
                     imageFile = BitmapUtils.createTempImageFile(
-                            IMAGE_CACHE_PATH, mDeviceId);
+                            IMAGE_CACHE_PATH, ShareSightApplication.getDeviceId());
                     mImagePath = imageFile.getAbsolutePath();
                 } catch (IOException e) {
                     // OMMIT THIS EXCEPTION
@@ -141,6 +147,9 @@ public class MainActivity extends ActionBarActivity implements TabListener {
             startActivityForResult(photoPickerIntent, REQUEST_IMAGE_SELECT);
         } else if (id == R.id.action_exit) {
             // exit this activity, also means exit the application
+            if (mPushAgent.isEnabled()) {
+                mPushAgent.disable();
+            }
             finish();
         }
         return super.onOptionsItemSelected(item);
@@ -167,7 +176,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
             Uri selected = data.getData();
             try {
                 File cacheFile = BitmapUtils.createTempImageFile(
-                        IMAGE_CACHE_PATH, mDeviceId);
+                        IMAGE_CACHE_PATH, ShareSightApplication.getDeviceId());
                 mImagePath = cacheFile.getAbsolutePath();
                 // move the selected file into cache folder
                 BitmapUtils.decodeAndSave(

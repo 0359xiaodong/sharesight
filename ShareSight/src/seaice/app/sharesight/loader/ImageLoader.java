@@ -11,6 +11,7 @@ import seaice.app.sharesight.http.get.ImageTask;
 import seaice.app.sharesight.http.get.TextTask;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -33,6 +34,8 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
     private boolean mCancelled = false;
 
+    private boolean mDebug = true;
+
     public ImageLoader(ImageLoaderCallback callback) {
         mCallback = callback;
         mFileCache = new FileCache();
@@ -46,16 +49,26 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
         mCallback = callback;
     }
 
-    public void loadImageMetaList(int page, int count, Bundle extras) {
+    public void loadImageMetaList(String city, int page, int count,
+            Bundle extras) {
         mCancelled = false;
         mCallback.beforeLoadImageMeta();
-        String url = IMAGE_META_SERVER + "/" + page + "/" + count;
+        String url = IMAGE_META_SERVER + "/" + city + "/" + page + "/" + count;
         Bundle data = new Bundle();
         data.putString(TextTask.URL_TAG, url);
         if (extras != null) {
             data.putAll(extras);
         }
         new TextTask(this).execute(data);
+    }
+
+    public void loadTopImageMetaList(String city, int page, int count,
+            Bundle extras) {
+
+    }
+
+    public void loadSelfImageMetaList(int page, int count, Bundle extras) {
+
     }
 
     public void loadImage(String url, Bundle extras) {
@@ -91,6 +104,9 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
         if (result == null) {
             mCallback.afterLoadImageMeta();
             return;
+        }
+        if (mDebug) {
+            Log.d("OnGetTextResult", result.getText());
         }
         String json = result.getText();
         ArrayList<ImageMeta> imageMetaList = new ArrayList<ImageMeta>();

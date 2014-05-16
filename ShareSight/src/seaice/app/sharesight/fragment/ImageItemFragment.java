@@ -1,5 +1,7 @@
 package seaice.app.sharesight.fragment;
 
+import com.umeng.analytics.MobclickAgent;
+
 import seaice.app.sharesight.R;
 import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.loader.ImageLoader;
@@ -19,6 +21,8 @@ public class ImageItemFragment extends Fragment {
     public static final String IMAGE_PATH_TAG = "seaice.app.sharesight.fragment.ImageItemFragment.URL";
 
     public static final String IMAGE_META_TAG = "seaice.app.sharesight.fragment.ImageItemFragment.IMAGE_META";
+    
+    private static final String PAGE_TAG = "seaice.app.sharesight.fragment.ImageItemFragment.PAGE";
 
     private ImageLoader mLoader;
 
@@ -36,6 +40,18 @@ public class ImageItemFragment extends Fragment {
                 }
             }
         });
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        MobclickAgent.onPageStart(PAGE_TAG); 
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPageEnd(PAGE_TAG); 
     }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

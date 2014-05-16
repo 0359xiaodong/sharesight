@@ -2,6 +2,8 @@ package seaice.app.sharesight;
 
 import java.io.File;
 
+import seaice.app.sharesight.bcs.BCSSvc;
+import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.poster.ImagePoster;
 import seaice.app.sharesight.poster.ImagePosterCallback;
 import seaice.app.sharesight.utils.BitmapUtils;
@@ -10,7 +12,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
@@ -22,6 +23,8 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.location.LocationClientOption.LocationMode;
+import com.umeng.analytics.MobclickAgent;
+import com.umeng.message.PushAgent;
 
 public class UploadActivity extends ActionBarActivity implements
         ImagePosterCallback, BDLocationListener {
@@ -33,18 +36,10 @@ public class UploadActivity extends ActionBarActivity implements
      * Hold this preview Image
      */
     private ImageView mImgView;
-    /**
-     * Width of this image
-     */
-    private int mWidth = 0;
-    /**
-     * Height of this image
-     */
-    private int mHeight = 0;
-    /**
-     * Where the image locate
-     */
+
     private String mImagePath;
+
+    private ImageMeta mImageMeta;
     /**
      * Show the location where the user are currently.
      */
@@ -66,22 +61,28 @@ public class UploadActivity extends ActionBarActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload);
 
+        mImgView = (ImageView) findViewById(R.id.confirmImage);
+        mLocationView = (TextView) findViewById(R.id.upload_location);
+        mLocationView.setTextColor(Color.BLUE);
+
+        mImagePath = getIntent().getStringExtra(IMAGE_PATH_TAG);
+        Bitmap bitmap = BitmapUtils
+                .decodeFileWithoutScale(new File(mImagePath));
+        mImgView.setImageBitmap(bitmap);
+
         mProgressDialog = new ProgressDialog(this,
                 ProgressDialog.STYLE_HORIZONTAL);
         mProgressDialog.setMessage(getResources().getText(
                 R.string.action_uploading)
                 + "...");
 
-        mImagePath = getIntent().getStringExtra(IMAGE_PATH_TAG);
-        mImgView = (ImageView) findViewById(R.id.confirmImage);
-        mLocationView = (TextView) findViewById(R.id.upload_location);
-        mLocationView.setTextColor(Color.BLUE);
-
-        Bitmap bitmap = BitmapUtils
-                .decodeFileWithoutScale(new File(mImagePath));
-        mImgView.setImageBitmap(bitmap);
-        mWidth = bitmap.getWidth();
-        mHeight = bitmap.getHeight();
+        mImageMeta = new ImageMeta();
+        String fileName = mImagePath.substring(mImagePath.lastIndexOf('/') + 1);
+        String url = BCSSvc.generateUrl(fileName);
+        mImageMeta.setUrl(url);
+        mImageMeta.setWidth(bitmap.getWidth());
+        mImageMeta.setHeight(bitmap.getHeight());
+        mImageMeta.setDeviceId(ShareSightApplication.getDeviceId());
 
         mPoster = new ImagePoster(this);
         mLocationClient = new LocationClient(getApplicationContext());
@@ -89,13 +90,27 @@ public class UploadActivity extends ActionBarActivity implements
         mLocationClient.start();
 
         LocationClientOption option = new LocationClientOption();
-        option.setLocationMode(LocationMode.Hight_Accuracy);
+        option.setLocationMode(LocationMode.Battery_Saving);
         option.setCoorType("bd09ll");
         option.setScanSpan(5000);
         option.setIsNeedAddress(true);
         option.setNeedDeviceDirect(true);
         mLocationClient.setLocOption(option);
         mLocationClient.requestLocation();
+
+        PushAgent.getInstance(this).onAppStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MobclickAgent.onResume(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPause(this);
     }
 
     @Override
@@ -117,8 +132,7 @@ public class UploadActivity extends ActionBarActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_upload) {
-            TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-            mPoster.post(mImagePath, mWidth, mHeight, tm.getDeviceId());
+            mPoster.post(mImagePath, mImageMeta);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -144,6 +158,10 @@ public class UploadActivity extends ActionBarActivity implements
             return;
         }
         mLocationView.setText(location.getAddrStr());
+        mImageMeta.setCity(location.getCity());
+        mImageMeta.setAddr(location.getAddrStr());
+        mImageMeta.setLongitude(location.getLongitude());
+        mImageMeta.setLatitude(location.getLatitude());
     }
 
     @Override

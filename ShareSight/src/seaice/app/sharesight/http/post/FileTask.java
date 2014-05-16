@@ -71,7 +71,7 @@ public class FileTask extends AsyncTask<Bundle, Integer, TextResult> {
         try {
             HttpResponse response = httpClient.execute(httpPost);
             HttpEntity resEntity = response.getEntity();
-            String content = EntityUtils.toString(resEntity);
+            String content = EntityUtils.toString(resEntity, "UTF-8");
             resEntity.consumeContent();
             return new TextResult(content, data);
         } catch (Exception e) {

@@ -9,16 +9,21 @@ public class MainPagerAdapter extends FragmentPagerAdapter {
 
     private String[] mTitles;
 
+    private Fragment[] mFragments;
+
     public MainPagerAdapter(FragmentManager fm) {
         super(fm);
 
-        mTitles = ShareSight.getContext().getResources()
+        mTitles = ShareSightApplication.getContext().getResources()
                 .getStringArray(R.array.pager_titles);
+        mFragments = new Fragment[] { new ImageGridFragment(),
+                new ImageGridFragment(), new ImageGridFragment(),
+                new ImageGridFragment() };
     }
 
     @Override
     public Fragment getItem(int i) {
-        return new ImageGridFragment();
+        return mFragments[i];
     }
 
     @Override

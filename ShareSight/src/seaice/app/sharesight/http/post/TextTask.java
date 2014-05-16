@@ -10,6 +10,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import seaice.app.sharesight.http.TextResult;
@@ -44,8 +45,6 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
             return null;
         }
         for (int i = 0; i < keyArray.size(); ++i) {
-            System.out.println("Add " + keyArray.get(i) + ", "
-                    + valueArray.get(i));
             postParams.add(new BasicNameValuePair(keyArray.get(i), valueArray
                     .get(i)));
         }
@@ -54,10 +53,10 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
         HttpPost httpPost = new HttpPost(data.getString(URL_TAG));
 
         try {
-            httpPost.setEntity(new UrlEncodedFormEntity(postParams));
+            httpPost.setEntity(new UrlEncodedFormEntity(postParams, HTTP.UTF_8));
             HttpResponse response = httpClient.execute(httpPost);
-            return new TextResult(EntityUtils.toString(response.getEntity()),
-                    data);
+            return new TextResult(EntityUtils.toString(response.getEntity(),
+                    "UTF-8"), data);
         } catch (IOException e) {
         }
         return null;

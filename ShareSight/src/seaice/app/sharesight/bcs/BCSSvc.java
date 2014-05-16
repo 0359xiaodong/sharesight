@@ -35,7 +35,6 @@ public class BCSSvc {
                 new File(filePath));
         ObjectMetadata result = response.getResult();
         if (mClient != null) {
-            clientData.putString(URL_TAG, mWrapper.generateUrl(object));
             mClient.onFileUploaded(result, clientData);
         }
         return result;
@@ -63,6 +62,8 @@ public class BCSSvc {
         }
         return result;
     }
-
-    public static final String URL_TAG = "seaice.app.sharesight.bcs.BCSSvc";
+    
+    public static String generateUrl(String fileName) {
+        return BCSWrapper.generateUrl(fileName);
+    }
 }

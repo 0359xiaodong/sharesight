@@ -2,6 +2,9 @@ package seaice.app.sharesight;
 
 import java.util.ArrayList;
 
+import com.umeng.analytics.MobclickAgent;
+import com.umeng.message.PushAgent;
+
 import seaice.app.sharesight.data.ImageMeta;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
@@ -15,6 +18,7 @@ public class ViewActivity extends ActionBarActivity {
 
     public static final String CURRENT_ITEM_TAG = "seaice.app.sharesight.ViewActivity.CURRENT_ITEM";
     public static final String IMAGE_META_LIST_TAG = "seaice.app.sharesight.ViewActivity.IMAGE_META_LIST";
+    public static final String CITY_TAG = "seaice.app.sharesight.ViewActivity.CITY";
 
     private ArrayList<ImageMeta> mMetaList;
 
@@ -24,14 +28,29 @@ public class ViewActivity extends ActionBarActivity {
         setContentView(R.layout.activity_view);
 
         int currentIndex = getIntent().getIntExtra(CURRENT_ITEM_TAG, 0);
+        String city = getIntent().getStringExtra(CITY_TAG);
         mMetaList = getIntent()
                 .getParcelableArrayListExtra(IMAGE_META_LIST_TAG);
 
         ViewPager viewPager = (ViewPager) findViewById(R.id.view_pager);
         PagerAdapter adapter = new ViewPagerAdapter(
-                getSupportFragmentManager(), mMetaList);
+                getSupportFragmentManager(), mMetaList, city);
         viewPager.setAdapter(adapter);
         viewPager.setCurrentItem(currentIndex);
+
+        PushAgent.getInstance(this).onAppStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MobclickAgent.onResume(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPause(this);
     }
 
     @Override

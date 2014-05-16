@@ -37,7 +37,8 @@ public class TextTask extends AsyncTask<Bundle, Integer, TextResult> {
         try {
             HttpResponse response = httpClient.execute(httpGet);
             HttpEntity respEntity = response.getEntity();
-            return new TextResult(EntityUtils.toString(respEntity), data);
+            return new TextResult(EntityUtils.toString(respEntity, "UTF-8"),
+                    data);
         } catch (IOException e) {
             e.printStackTrace();
         }

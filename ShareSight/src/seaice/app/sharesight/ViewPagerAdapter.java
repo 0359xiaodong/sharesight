@@ -21,31 +21,27 @@ import android.support.v4.app.FragmentStatePagerAdapter;
  */
 public class ViewPagerAdapter extends FragmentStatePagerAdapter {
 
-    /**
-     * The array list of image meta data
-     */
     private List<ImageMeta> mMetaList;
-    /**
-     * The backend to load image meta and image
-     */
+    private String mCity;
+
     private ImageLoader mLoader;
-    /**
-     * a config variable, how many number of images should be loaded once a time
-     */
+
     private static final int IMAGE_COUNT_PER_PAGE = 10;
 
-    public ViewPagerAdapter(FragmentManager fm,
-            ArrayList<ImageMeta> metaList) {
+    public ViewPagerAdapter(FragmentManager fm, ArrayList<ImageMeta> metaList,
+            String city) {
         super(fm);
 
         this.mMetaList = metaList;
+        this.mCity = city;
         mLoader = new ImageLoader(new ImageLoaderAdapter() {
             @Override
             public void onImageMetaLoaded(ArrayList<ImageMeta> imageMetaList,
                     Bundle extras) {
                 if (imageMetaList != null) {
                     mMetaList.addAll(imageMetaList);
-                    // Must invoke this method, or there is IllegalStateException
+                    // Must invoke this method, or there is
+                    // IllegalStateException
                     ViewPagerAdapter.this.notifyDataSetChanged();
                 }
             }
@@ -57,7 +53,7 @@ public class ViewPagerAdapter extends FragmentStatePagerAdapter {
         int total = getCount();
         // if it is the last image and there may be more image
         if (i == (total - 1) && (total % IMAGE_COUNT_PER_PAGE == 0)) {
-            mLoader.loadImageMetaList(total / IMAGE_COUNT_PER_PAGE,
+            mLoader.loadImageMetaList(mCity, total / IMAGE_COUNT_PER_PAGE,
                     IMAGE_COUNT_PER_PAGE, null);
         }
         Fragment fragment = new ImageItemFragment();
