@@ -21,5 +21,6 @@
     <string name="action_sdcard_notfound">SD卡未找到</string>
     <string name="action_upload_location">正在定位&#8230;</string>
     <string name="action_upload_hint">说点什么(可选)&#8230;</string>
+    <string name="image_item_notext">没有说什么&#8230;</string>
 
 </resources>

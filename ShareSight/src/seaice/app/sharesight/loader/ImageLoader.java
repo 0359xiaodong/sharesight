@@ -67,7 +67,7 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
 
     }
 
-    public void loadSelfImageMetaList(int page, int count, Bundle extras) {
+    public void loadSelfImageMetaList(String deviceid, int page, int count, Bundle extras) {
 
     }
 
@@ -83,7 +83,7 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
             mCallback.onImageLoaded(bitmap, extras);
             return;
         }
-        mCallback.beforeLoadImageMeta();
+        mCallback.beforeLoadImage();
         Bundle data = new Bundle();
         data.putString(ImageTask.URL_TAG, url);
         if (extras != null) {

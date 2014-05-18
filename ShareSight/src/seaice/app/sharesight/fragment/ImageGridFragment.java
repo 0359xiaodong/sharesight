@@ -46,32 +46,22 @@ import com.umeng.analytics.MobclickAgent;
  */
 public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
         BDLocationListener {
-    /**
-     * The image load task queue
-     */
-    private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
-    /**
-     * The view to hold all the added image
-     */
+
+    public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_VIEW_ID";
+    private static final String UMENG_PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
+    protected static final String IMAGE_META_LIST_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_META_LIST";
+    protected static final String PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
+
     protected ImageScrollView mScrollView;
-    /**
-     * The image meta data describes which images to load
-     */
+
+    private Queue<ImageTask> mTaskQueue = new LinkedList<ImageTask>();
     protected ArrayList<ImageMeta> mMetaList;
-
-    protected boolean mLoading = false;
-
     protected int mPage = 0;
-
     protected static final int IMAGE_COUNT_PER_PAGE = 10;
 
     protected ImageLoader mLoader;
-
+    protected boolean mLoading = false;
     private ProgressDialog mProgressDialog;
-
-    public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_VIEW_ID";
-
-    private static final String PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
 
     protected LocationClient mLocationClient;
 
@@ -89,20 +79,19 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
     @Override
     public void onResume() {
         super.onResume();
-        MobclickAgent.onPageStart(PAGE_TAG);
+        MobclickAgent.onPageStart(UMENG_PAGE_TAG);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        MobclickAgent.onPageEnd(PAGE_TAG);
+        MobclickAgent.onPageEnd(UMENG_PAGE_TAG);
+    }
 
-        if (mLocationClient.isStarted()) {
-            mLocationClient.stop();
-        }
-        if (mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-        }
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(IMAGE_META_LIST_TAG, mMetaList);
+        outState.putInt(PAGE_TAG, mPage);
     }
 
     @Override
@@ -124,7 +113,7 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
             }
         });
 
-        mLocationClient = new LocationClient(activity.getApplicationContext());
+        mLocationClient = new LocationClient(activity);
         mLocationClient.registerLocationListener(this);
 
         LocationClientOption option = new LocationClientOption();
@@ -157,12 +146,32 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
                 container, false);
         mScrollView = (ImageScrollView) rootView.findViewById(R.id.container);
         onGetScrollView();
-        if (mScrollView.getImageCount() == 0) {
-            System.out
-                    .println("ImageViewCount: " + mScrollView.getImageCount());
-            onRefresh();
-        }
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        if (savedInstanceState == null) {
+            onRefresh();
+        } else {
+            mMetaList = savedInstanceState
+                    .getParcelableArrayList(IMAGE_META_LIST_TAG);
+            mPage = savedInstanceState.getInt(PAGE_TAG);
+
+            mTaskQueue.clear();
+            addImageViewList(mMetaList);
+            ImageTask task = mTaskQueue.poll();
+
+            // If the image meta list is empty, then there is no task...
+            if (task == null) {
+                return;
+            }
+            Bundle data = new Bundle();
+            data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
+            mLoader.loadImage(task.url, data);
+        }
     }
 
     /**
@@ -332,7 +341,6 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
 
     @Override
     public void onReceiveLocation(BDLocation location) {
-        System.out.println("OnReceiveLocation: " + location.getCity());
         mLocation = location;
         mLocationClient.stop();
         onLoadImageMeta();
