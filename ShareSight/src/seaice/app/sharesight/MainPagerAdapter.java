@@ -1,6 +1,7 @@
 package seaice.app.sharesight;
 
 import seaice.app.sharesight.fragment.ImageGridFragment;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -9,21 +10,23 @@ public class MainPagerAdapter extends FragmentPagerAdapter {
 
     private String[] mTitles;
 
-    private Fragment[] mFragments;
+    private String mCity;
 
-    public MainPagerAdapter(FragmentManager fm) {
+    public MainPagerAdapter(FragmentManager fm, String city) {
         super(fm);
 
         mTitles = ShareSightApplication.getContext().getResources()
                 .getStringArray(R.array.pager_titles);
-        mFragments = new Fragment[] { new ImageGridFragment(),
-                new ImageGridFragment(), new ImageGridFragment(),
-                new ImageGridFragment() };
+        mCity = city;
     }
 
     @Override
     public Fragment getItem(int i) {
-        return mFragments[i];
+        Fragment fragment = new ImageGridFragment();
+        Bundle data = new Bundle();
+        data.putString(ImageGridFragment.CITY_TAG, mCity);
+        fragment.setArguments(data);
+        return fragment;
     }
 
     @Override

@@ -29,11 +29,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.baidu.location.BDLocation;
-import com.baidu.location.BDLocationListener;
-import com.baidu.location.LocationClient;
-import com.baidu.location.LocationClientOption;
-import com.baidu.location.LocationClientOption.LocationMode;
 import com.umeng.analytics.MobclickAgent;
 
 /**
@@ -44,13 +39,14 @@ import com.umeng.analytics.MobclickAgent;
  * @author zhb
  * 
  */
-public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
-        BDLocationListener {
+public class ImageGridFragment extends Fragment implements ImageLoaderCallback {
 
     public static final String IMAGE_VIEW_ID_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_VIEW_ID";
     private static final String UMENG_PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
     protected static final String IMAGE_META_LIST_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_META_LIST";
+    protected static final String IMAGE_COUNT_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.IMAGE_COUNT";
     protected static final String PAGE_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.PAGE";
+    public static final String CITY_TAG = "seaice.app.sharesight.fragment.ImageGridFragment.CITY";
 
     protected ImageScrollView mScrollView;
 
@@ -61,13 +57,10 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
 
     protected ImageLoader mLoader;
     protected boolean mLoading = false;
+
+    private String mCity;
+
     private ProgressDialog mProgressDialog;
-
-    protected LocationClient mLocationClient;
-
-    protected BDLocation mLocation;
-
-    protected String mDefaultCity = "北京";
 
     public ImageGridFragment() {
         super();
@@ -92,9 +85,14 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
     public void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(IMAGE_META_LIST_TAG, mMetaList);
         outState.putInt(PAGE_TAG, mPage);
+        outState.putInt(IMAGE_COUNT_TAG, mScrollView.getImageCount());
     }
 
     @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.fragment_image_grid, menu);
+    }
+
     public void onAttach(Activity activity) {
         super.onAttach(activity);
 
@@ -112,22 +110,6 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
                 mLoader.setCancelled(true);
             }
         });
-
-        mLocationClient = new LocationClient(activity);
-        mLocationClient.registerLocationListener(this);
-
-        LocationClientOption option = new LocationClientOption();
-        option.setLocationMode(LocationMode.Battery_Saving);
-        option.setCoorType("bd09ll");
-        option.setScanSpan(0);
-        option.setIsNeedAddress(true);
-        option.setNeedDeviceDirect(true);
-        mLocationClient.setLocOption(option);
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.fragment_image_grid, menu);
     }
 
     @Override
@@ -145,33 +127,18 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
         View rootView = inflater.inflate(R.layout.fragment_image_grid,
                 container, false);
         mScrollView = (ImageScrollView) rootView.findViewById(R.id.container);
+        Bundle args = getArguments();
+        mCity = args.getString(CITY_TAG);
         onGetScrollView();
-        return rootView;
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
         if (savedInstanceState == null) {
             onRefresh();
         } else {
             mMetaList = savedInstanceState
                     .getParcelableArrayList(IMAGE_META_LIST_TAG);
             mPage = savedInstanceState.getInt(PAGE_TAG);
-
-            mTaskQueue.clear();
-            addImageViewList(mMetaList);
-            ImageTask task = mTaskQueue.poll();
-
-            // If the image meta list is empty, then there is no task...
-            if (task == null) {
-                return;
-            }
-            Bundle data = new Bundle();
-            data.putInt(IMAGE_VIEW_ID_TAG, task.imageViewId);
-            mLoader.loadImage(task.url, data);
+            onImageMetaLoaded(mMetaList, null);
         }
+        return rootView;
     }
 
     /**
@@ -193,22 +160,14 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
             mMetaList.clear();
         }
         mScrollView.removeAllImageViews();
-
-        mLocationClient.start();
-        mLocationClient.requestLocation();
+        onLoadImageMeta();
     }
 
     /**
      * subclasses can override this method to provide yourself strategy
      */
     public void onLoadImageMeta() {
-        if (mLocation == null) {
-            mLoader.loadCityMetaList(mDefaultCity, mPage, IMAGE_COUNT_PER_PAGE,
-                    null);
-        } else {
-            mLoader.loadCityMetaList(mLocation.getCity(), mPage,
-                    IMAGE_COUNT_PER_PAGE, null);
-        }
+        mLoader.loadCityMetaList(mCity, mPage, IMAGE_COUNT_PER_PAGE, null);
     }
 
     protected class DefaultScrollViewListenner implements ScrollViewListenner {
@@ -226,7 +185,8 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
 
                 if ((mMetaList.size() % IMAGE_COUNT_PER_PAGE == 0)) {
                     ++mPage;
-                    mLocationClient.requestLocation();
+                    mLoader.loadCityMetaList(mCity, mPage,
+                            IMAGE_COUNT_PER_PAGE, null);
                 }
             }
         }
@@ -243,11 +203,7 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
             intent.putParcelableArrayListExtra(
                     ViewActivity.IMAGE_META_LIST_TAG, mMetaList);
             intent.putExtra(ViewActivity.CURRENT_ITEM_TAG, index);
-            if (mLocation != null) {
-                intent.putExtra(ViewActivity.CITY_TAG, mLocation.getCity());
-            } else {
-                intent.putExtra(ViewActivity.CITY_TAG, mDefaultCity);
-            }
+            intent.putExtra(ViewActivity.CITY_TAG, mCity);
             startActivity(intent);
         }
 
@@ -301,13 +257,12 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
 
     @Override
     public void beforeLoadImage() {
-
     }
 
     @Override
     public void afterLoadImageMeta() {
-        mLoading = false;
         mProgressDialog.dismiss();
+        mLoading = false;
     }
 
     @Override
@@ -337,17 +292,5 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
                     imageMeta.getHeight());
             mTaskQueue.add(new ImageTask(retId, imageMeta.getUrl()));
         }
-    }
-
-    @Override
-    public void onReceiveLocation(BDLocation location) {
-        mLocation = location;
-        mLocationClient.stop();
-        onLoadImageMeta();
-    }
-
-    @Override
-    public void onReceivePoi(BDLocation location) {
-
     }
 }

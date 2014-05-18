@@ -22,5 +22,6 @@
     <string name="action_upload_location">Location Detecting&#8230;</string>
     <string name="action_upload_hint">Say Something(Optional)&#8230;</string>
     <string name="image_item_notext">No words&#8230;</string>
+    <string name="cannot_get_location">Can not detect your location&#8230;</string>
 
 </resources>

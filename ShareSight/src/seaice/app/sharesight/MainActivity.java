@@ -16,11 +16,17 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.LocationClientOption.LocationMode;
 import com.umeng.analytics.MobclickAgent;
 import com.umeng.message.PushAgent;
 
@@ -31,7 +37,8 @@ import com.umeng.message.PushAgent;
  * @author zhb
  * 
  */
-public class MainActivity extends ActionBarActivity implements TabListener {
+public class MainActivity extends ActionBarActivity implements TabListener,
+        BDLocationListener {
 
     /**
      * Request the camera to take a picture
@@ -55,37 +62,33 @@ public class MainActivity extends ActionBarActivity implements TabListener {
      */
     private PushAgent mPushAgent;
 
+    private LocationClient mLocationClient;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mViewPager = (ViewPager) findViewById(R.id.pager);
-        MainPagerAdapter adapter = new MainPagerAdapter(
-                getSupportFragmentManager());
-        mViewPager.setAdapter(adapter);
-
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setHomeButtonEnabled(false);
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-
-        mViewPager
-                .setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-                    @Override
-                    public void onPageSelected(int position) {
-                        actionBar.setSelectedNavigationItem(position);
-                    }
-                });
-
-        for (int i = 0; i < adapter.getCount(); i++) {
-            actionBar.addTab(actionBar.newTab()
-                    .setText(adapter.getPageTitle(i)).setTabListener(this));
-        }
 
         mPushAgent = PushAgent.getInstance(this);
         mPushAgent.enable();
 
         PushAgent.getInstance(this).onAppStart();
+
+        // get location
+        mLocationClient = new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(this);
+        mLocationClient.start();
+
+        LocationClientOption option = new LocationClientOption();
+        option.setLocationMode(LocationMode.Battery_Saving);
+        option.setCoorType("bd09ll");
+        option.setScanSpan(0);
+        option.setIsNeedAddress(true);
+        option.setNeedDeviceDirect(true);
+        mLocationClient.setLocOption(option);
+        mLocationClient.requestLocation();
     }
 
     @Override
@@ -208,5 +211,43 @@ public class MainActivity extends ActionBarActivity implements TabListener {
     @Override
     public void onTabUnselected(Tab tab, FragmentTransaction fragmentTransaction) {
         // I do not care currently
+    }
+
+    @Override
+    public void onReceiveLocation(BDLocation location) {
+        if (location == null) {
+            Toast.makeText(this,
+                    getResources().getString(R.string.cannot_get_location),
+                    Toast.LENGTH_LONG).show();
+        } else {
+            String city = location.getCity();
+            Log.d("OnReceiveLocation", city);
+            MainPagerAdapter adapter = new MainPagerAdapter(
+                    getSupportFragmentManager(), city);
+            mViewPager.setAdapter(adapter);
+
+            final ActionBar actionBar = getSupportActionBar();
+            actionBar.setHomeButtonEnabled(false);
+            actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+
+            mViewPager
+                    .setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+                        @Override
+                        public void onPageSelected(int position) {
+                            actionBar.setSelectedNavigationItem(position);
+                        }
+                    });
+
+            for (int i = 0; i < adapter.getCount(); i++) {
+                actionBar.addTab(actionBar.newTab()
+                        .setText(adapter.getPageTitle(i)).setTabListener(this));
+            }
+        }
+    }
+
+    @Override
+    public void onReceivePoi(BDLocation location) {
+        // TODO Auto-generated method stub
+
     }
 }
