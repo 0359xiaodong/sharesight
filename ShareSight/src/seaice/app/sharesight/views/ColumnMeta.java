@@ -1,4 +1,4 @@
-package seaice.app.sharesight.data;
+package seaice.app.sharesight.views;
 
 public class ColumnMeta {
 

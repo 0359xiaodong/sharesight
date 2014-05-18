@@ -1,9 +1,9 @@
 package seaice.app.sharesight.fragment;
 
 import seaice.app.sharesight.R;
-import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderAdapter;
+import seaice.app.sharesight.loader.ImageMeta;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;

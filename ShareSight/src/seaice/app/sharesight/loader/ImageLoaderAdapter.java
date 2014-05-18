@@ -2,7 +2,6 @@ package seaice.app.sharesight.loader;
 
 import java.util.ArrayList;
 
-import seaice.app.sharesight.data.ImageMeta;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 

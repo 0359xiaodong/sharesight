@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import seaice.app.sharesight.R;
-import seaice.app.sharesight.data.ColumnMeta;
 import seaice.app.sharesight.utils.AppUtils;
 import android.content.Context;
 import android.content.res.TypedArray;

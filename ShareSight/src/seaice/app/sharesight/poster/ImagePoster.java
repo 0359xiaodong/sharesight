@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import seaice.app.sharesight.bcs.BCSSvc;
 import seaice.app.sharesight.bcs.BCSSvcClient;
-import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.http.TextResult;
 import seaice.app.sharesight.http.TextResultClient;
 import seaice.app.sharesight.http.post.TextTask;
+import seaice.app.sharesight.loader.ImageMeta;
 import android.os.Bundle;
 import android.util.Log;
 

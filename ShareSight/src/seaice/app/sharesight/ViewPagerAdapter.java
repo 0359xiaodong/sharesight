@@ -3,10 +3,10 @@ package seaice.app.sharesight;
 import java.util.ArrayList;
 import java.util.List;
 
-import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.fragment.ImageItemFragment;
 import seaice.app.sharesight.loader.ImageLoader;
 import seaice.app.sharesight.loader.ImageLoaderAdapter;
+import seaice.app.sharesight.loader.ImageMeta;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;

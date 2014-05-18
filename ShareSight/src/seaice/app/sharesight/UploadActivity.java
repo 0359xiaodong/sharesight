@@ -3,7 +3,7 @@ package seaice.app.sharesight;
 import java.io.File;
 
 import seaice.app.sharesight.bcs.BCSSvc;
-import seaice.app.sharesight.data.ImageMeta;
+import seaice.app.sharesight.loader.ImageMeta;
 import seaice.app.sharesight.poster.ImagePoster;
 import seaice.app.sharesight.poster.ImagePosterCallback;
 import seaice.app.sharesight.utils.BitmapUtils;

@@ -2,7 +2,6 @@ package seaice.app.sharesight.loader;
 
 import java.util.ArrayList;
 
-import seaice.app.sharesight.data.ImageMeta;
 import seaice.app.sharesight.http.ImageResult;
 import seaice.app.sharesight.http.ImageResultClient;
 import seaice.app.sharesight.http.TextResult;

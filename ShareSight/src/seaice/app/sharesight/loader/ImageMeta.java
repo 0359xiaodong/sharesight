@@ -1,4 +1,4 @@
-package seaice.app.sharesight.data;
+package seaice.app.sharesight.loader;
 
 import android.os.Parcel;
 import android.os.Parcelable;

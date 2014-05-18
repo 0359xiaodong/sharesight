@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.umeng.analytics.MobclickAgent;
 import com.umeng.message.PushAgent;
 
-import seaice.app.sharesight.data.ImageMeta;
+import seaice.app.sharesight.loader.ImageMeta;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
