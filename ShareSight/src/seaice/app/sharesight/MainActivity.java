@@ -102,7 +102,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 
     @Override
     public void onSaveInstanceState(Bundle instanceState) {
-        // In case when the phone's orientation changes
         instanceState.putString(UploadActivity.IMAGE_PATH_TAG, mImagePath);
     }
 
