@@ -203,10 +203,10 @@ public class ImageGridFragment extends Fragment implements ImageLoaderCallback,
      */
     public void onLoadImageMeta() {
         if (mLocation == null) {
-            mLoader.loadImageMetaList(mDefaultCity, mPage,
-                    IMAGE_COUNT_PER_PAGE, null);
+            mLoader.loadCityMetaList(mDefaultCity, mPage, IMAGE_COUNT_PER_PAGE,
+                    null);
         } else {
-            mLoader.loadImageMetaList(mLocation.getCity(), mPage,
+            mLoader.loadCityMetaList(mLocation.getCity(), mPage,
                     IMAGE_COUNT_PER_PAGE, null);
         }
     }

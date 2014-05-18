@@ -62,7 +62,7 @@ public class BCSSvc {
         }
         return result;
     }
-    
+
     public static String generateUrl(String fileName) {
         return BCSWrapper.generateUrl(fileName);
     }

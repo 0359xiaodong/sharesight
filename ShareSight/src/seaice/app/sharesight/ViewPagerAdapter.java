@@ -53,7 +53,7 @@ public class ViewPagerAdapter extends FragmentStatePagerAdapter {
         int total = getCount();
         // if it is the last image and there may be more image
         if (i == (total - 1) && (total % IMAGE_COUNT_PER_PAGE == 0)) {
-            mLoader.loadImageMetaList(mCity, total / IMAGE_COUNT_PER_PAGE,
+            mLoader.loadCityMetaList(mCity, total / IMAGE_COUNT_PER_PAGE,
                     IMAGE_COUNT_PER_PAGE, null);
         }
         Fragment fragment = new ImageItemFragment();

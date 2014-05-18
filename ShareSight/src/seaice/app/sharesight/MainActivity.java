@@ -121,7 +121,8 @@ public class MainActivity extends ActionBarActivity implements TabListener {
                 try {
                     // where the photo should locate
                     imageFile = BitmapUtils.createTempImageFile(
-                            IMAGE_CACHE_PATH, ShareSightApplication.getDeviceId());
+                            IMAGE_CACHE_PATH,
+                            ShareSightApplication.getDeviceId());
                     mImagePath = imageFile.getAbsolutePath();
                 } catch (IOException e) {
                     // OMMIT THIS EXCEPTION

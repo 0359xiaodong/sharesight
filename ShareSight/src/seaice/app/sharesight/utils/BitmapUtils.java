@@ -60,7 +60,7 @@ public class BitmapUtils {
 
         return scaledBitmap;
     }
-    
+
     public static void saveBitmapToFile(Bitmap bitmap, String filePath) {
         try {
             FileOutputStream out = new FileOutputStream(filePath);
@@ -70,12 +70,12 @@ public class BitmapUtils {
             // error happened
         }
     }
-    
+
     public static Bitmap decodeFileWithoutScale(File file)
             throws OutOfMemoryError {
         return BitmapFactory.decodeFile(file.getAbsolutePath());
     }
-    
+
     public static File createTempImageFile(String cacheDirPath, String deviceId)
             throws IOException {
         Time today = new Time(Time.getCurrentTimezone());

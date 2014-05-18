@@ -58,7 +58,7 @@ public class ImageItemFragment extends Fragment {
             Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_image_item,
                 container, false);
-      
+
         Bundle data = getArguments();
         ImageMeta imageMeta = data.getParcelable(IMAGE_META_TAG);
 

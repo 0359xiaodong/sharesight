@@ -25,7 +25,13 @@ import com.google.gson.JsonParser;
  */
 public class ImageLoader implements TextResultClient, ImageResultClient {
 
-    private static final String IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/listimage";
+    private static final String CITY_IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/listimage";
+
+    private static final String NEAR_IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/nearimage";
+
+    private static final String MY_IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/myimage";
+
+    private static final String TOP_IMAGE_META_SERVER = "http://sharesight.duapp.com/index.php/app/topimage";
 
     private ImageLoaderCallback mCallback;
 
@@ -48,11 +54,11 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
         mCallback = callback;
     }
 
-    public void loadImageMetaList(String city, int page, int count,
-            Bundle extras) {
+    public void loadCityMetaList(String city, int page, int count, Bundle extras) {
         mCancelled = false;
         mCallback.beforeLoadImageMeta();
-        String url = IMAGE_META_SERVER + "/" + city + "/" + page + "/" + count;
+        String url = CITY_IMAGE_META_SERVER + "/" + city + "/" + page + "/"
+                + count;
         Bundle data = new Bundle();
         data.putString(TextTask.URL_TAG, url);
         if (extras != null) {
@@ -61,13 +67,45 @@ public class ImageLoader implements TextResultClient, ImageResultClient {
         new TextTask(this).execute(data);
     }
 
-    public void loadTopImageMetaList(String city, int page, int count,
-            Bundle extras) {
-
+    public void loadNearMetaList(double longitude, double latitude,
+            int kilometers, int page, int count, Bundle extras) {
+        mCancelled = false;
+        mCallback.beforeLoadImageMeta();
+        String url = NEAR_IMAGE_META_SERVER + "/" + longitude + "/" + latitude
+                + "/" + kilometers + "/" + page + "/" + count;
+        Bundle data = new Bundle();
+        data.putString(TextTask.URL_TAG, url);
+        if (extras != null) {
+            data.putAll(extras);
+        }
+        new TextTask(this).execute(data);
     }
 
-    public void loadSelfImageMetaList(String deviceid, int page, int count, Bundle extras) {
+    public void loadTopMetaList(String city, int page, int count, Bundle extras) {
+        mCancelled = false;
+        mCallback.beforeLoadImageMeta();
+        String url = TOP_IMAGE_META_SERVER + "/" + city + "/" + page + "/"
+                + count;
+        Bundle data = new Bundle();
+        data.putString(TextTask.URL_TAG, url);
+        if (extras != null) {
+            data.putAll(extras);
+        }
+        new TextTask(this).execute(data);
+    }
 
+    public void loadMyMetaList(String deviceid, int page, int count,
+            Bundle extras) {
+        mCancelled = false;
+        mCallback.beforeLoadImageMeta();
+        String url = MY_IMAGE_META_SERVER + "/" + deviceid + "/" + page + "/"
+                + count;
+        Bundle data = new Bundle();
+        data.putString(TextTask.URL_TAG, url);
+        if (extras != null) {
+            data.putAll(extras);
+        }
+        new TextTask(this).execute(data);
     }
 
     public void loadImage(String url, Bundle extras) {
